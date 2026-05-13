@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>FreshMart POS – PointSphere</title>
+  <title>Naivas POS – PointSphere</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@
 
 <div class="pos-header">
   <div>
-    <div class="brand">🛒 FreshMart Supermarket</div>
+    <div class="brand">🛒 Naivas Supermarket</div>
     <div class="sub">PointSphere Partner POS — Cashier Terminal</div>
   </div>
   <div class="time" id="clock">--:--:--</div>
@@ -151,7 +151,7 @@
 <!-- RECEIPT MODAL -->
 <div class="flow-overlay" id="receiptOverlay">
   <div class="receipt-modal">
-    <div class="r-title">🛒 FreshMart</div>
+    <div class="r-title">🛒 Naivas Supermarket</div>
     <div class="r-sub">PointSphere Partner — Official Receipt</div>
     <hr/>
     <div id="receiptLines"></div>
@@ -166,7 +166,7 @@
 <script>
 const API = "http://127.0.0.1:8000/api";
 const POS_CONFIG = {
-  name: "FreshMart Supermarket",
+  name: "Naivas Supermarket",
   partner_phone: "", // filled after login
   token: "",
   conversion_rate: 0.1
@@ -404,7 +404,7 @@ async function processTransaction(type) {
           phone: currentCustomer.phone,
           amount_ksh: total,
           pos_reference: posRef,
-          note: `FreshMart purchase — ${cart.length} items`
+          note: `Naivas purchase — ${cart.length} items`
         })
       });
       apiResult = await res.json();
@@ -419,7 +419,7 @@ async function processTransaction(type) {
           phone: currentCustomer.phone,
           points: pts,
           pos_reference: posRef,
-          note: "FreshMart redemption"
+          note: "Naivas redemption"
         })
       });
       apiResult = await res.json();

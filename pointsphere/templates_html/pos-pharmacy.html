@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>MediCare Pharmacy POS – PointSphere</title>
+  <title>Goodlife Pharmacy POS – PointSphere</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -77,7 +77,7 @@
 <body>
 <div class="pos-header">
   <div>
-    <div class="brand">💊 MediCare Pharmacy</div>
+    <div class="brand">💊 Goodlife Pharmacy</div>
     <div class="sub">PointSphere Partner POS — Dispensing Terminal</div>
   </div>
   <div class="time" id="clock">--:--:--</div>
@@ -125,7 +125,7 @@
 </div>
 <div class="flow-overlay" id="receiptOverlay">
   <div class="receipt-modal">
-    <div class="r-title">💊 MediCare Pharmacy</div>
+    <div class="r-title">💊 Goodlife Pharmacy</div>
     <div class="r-sub">PointSphere Partner — Dispensing Receipt</div>
     <hr/>
     <div id="receiptLines"></div>
@@ -261,12 +261,12 @@ async function processTransaction(type){
   showFlow(type==="earn"?"Earning Points...":"Redeeming Points...");
   await animateFlow(async()=>{
     if(type==="earn"){
-      const res=await fetch(`${API}/pos/earn/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:total,pos_reference:posRef,note:`MediCare purchase — ${cart.length} items`})});
+      const res=await fetch(`${API}/pos/earn/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:total,pos_reference:posRef,note:`Goodlife purchase — ${cart.length} items`})});
       apiResult=await res.json(); if(!res.ok) throw apiResult;
     }else{
       const pts=parseInt(prompt(`Redeem how many points? (Balance: ${currentCustomer.points})`));
       if(!pts) throw {error:"Cancelled"};
-      const res=await fetch(`${API}/pos/redeem/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:"MediCare redemption"})});
+      const res=await fetch(`${API}/pos/redeem/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:"Goodlife redemption"})});
       apiResult=await res.json(); if(!res.ok) throw apiResult;
     }
   });
