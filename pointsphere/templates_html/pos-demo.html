@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PointSphere – POS Demo Centre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"DM Sans",sans-serif;background:#0a0c14;color:#faf6ef;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+    .logo{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo-mark{width:44px;height:44px;background:linear-gradient(135deg,#c4622d,#d4a017);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:"Playfair Display";font-size:20px;font-weight:900}
+    .logo-txt{font-family:"Playfair Display";font-size:1.5rem;font-weight:700}
+    .logo-txt span{color:#f0c040}
+    h1{font-family:"Playfair Display";font-size:2rem;text-align:center;margin-bottom:8px}
+    .subtitle{opacity:0.5;text-align:center;font-size:14px;margin-bottom:40px;max-width:500px;line-height:1.6}
+    .arch{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 24px;margin-bottom:40px;font-size:13px;text-align:center;font-family:"DM Mono",monospace;line-height:2;color:#b09ee8}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:700px;width:100%}
+    .pos-card{border-radius:16px;padding:28px;cursor:pointer;text-decoration:none;color:#fff;transition:all 0.2s;display:block;border:2px solid transparent}
+    .pos-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,0.2)}
+    .pos-card .icon{font-size:40px;margin-bottom:12px}
+    .pos-card .name{font-size:18px;font-weight:700;margin-bottom:6px}
+    .pos-card .desc{font-size:12px;opacity:0.7;line-height:1.5;margin-bottom:14px}
+    .pos-card .tag{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.15);display:inline-block}
+    .supermarket{background:linear-gradient(135deg,#0057a8,#1a7fd4)}
+    .restaurant{background:linear-gradient(135deg,#7b3f00,#a0522d)}
+    .fuel{background:linear-gradient(135deg,#7a0000,#cc0000)}
+    .pharmacy{background:linear-gradient(135deg,#004d40,#00897b)}
+    .note{margin-top:32px;font-size:12px;opacity:0.4;text-align:center;max-width:500px;line-height:1.8}
+    .back{margin-top:20px;font-size:13px;color:#b09ee8;text-decoration:none;opacity:0.7}
+    .back:hover{opacity:1}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-mark">P</div>
+    <div class="logo-txt">Point<span>Sphere</span></div>
+  </div>
+
+  <h1>Mock POS Demo Centre</h1>
+  <p class="subtitle">Each terminal below simulates a real partner POS system. All transactions go through the shared PointSphere loyalty backend and update the same PostgreSQL database.</p>
+
+  <div class="arch">
+    POS Terminal &nbsp;→&nbsp; POST /api/pos/earn/ &nbsp;→&nbsp; Django Backend &nbsp;→&nbsp; PostgreSQL<br>
+    POS Terminal &nbsp;→&nbsp; POST /api/pos/redeem/ &nbsp;→&nbsp; Points Deducted &nbsp;→&nbsp; Receipt
+  </div>
+
+  <div class="grid">
+    <a href="pos-supermarket.html" class="pos-card supermarket">
+      <div class="icon">🛒</div>
+      <div class="name">Naivas Supermarket</div>
+      <div class="desc">Full grocery POS with 16 products across 5 categories. Customers earn points on every purchase.</div>
+      <span class="tag">16 products</span>
+    </a>
+    <a href="pos-restaurant.html" class="pos-card restaurant">
+      <div class="icon">☕</div>
+      <div class="name">Java House Café</div>
+      <div class="desc">Restaurant & café order terminal with full menu including coffee, food, drinks and desserts.</div>
+      <span class="tag">14 menu items</span>
+    </a>
+    <a href="pos-fuel.html" class="pos-card fuel">
+      <div class="icon">⛽</div>
+      <div class="name">Shell Fuel Station</div>
+      <div class="desc">Pump terminal with fuel type selection, litre input and shop items. Points on fuel and shop.</div>
+      <span class="tag">4 fuel types + shop</span>
+    </a>
+    <a href="pos-pharmacy.html" class="pos-card pharmacy">
+      <div class="icon">💊</div>
+      <div class="name">Goodlife Pharmacy</div>
+      <div class="desc">Dispensing counter with OTC meds, antibiotics, vitamins, hygiene and baby products.</div>
+      <span class="tag">15 products</span>
+    </a>
+  </div>
+
+  <p class="note">
+    Each POS logs in with its own partner credentials.<br>
+    Tokens are saved in localStorage per terminal so you don't re-login every time.<br>
+    All transactions appear in the Admin dashboard and Partner dashboard in real time.
+  </p>
+
+  <a href="index.html" class="back">← Back to PointSphere Login</a>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>FreshMart POS – PointSphere</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--brand:#0057a8;--brand-l:#1a7fd4;--bg:#f0f4f8;--white:#fff;--dark:#1a1a2e;--green:#16a34a;--red:#dc2626;--gold:#d97706}
+    body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min-height:100vh}
+
+    /* HEADER */
+    .pos-header{background:var(--brand);color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
+    .pos-header .brand{font-size:20px;font-weight:700;letter-spacing:0.5px}
+    .pos-header .sub{font-size:12px;opacity:0.7}
+    .pos-header .time{font-family:"DM Mono";font-size:14px}
+
+    /* LAYOUT */
+    .pos-body{display:grid;grid-template-columns:1fr 360px;gap:0;height:calc(100vh - 52px)}
+
+    /* PRODUCTS PANEL */
+    .products-panel{padding:16px;overflow-y:auto;background:var(--bg)}
+    .search-bar{background:#fff;border:1.5px solid #dde;border-radius:10px;padding:10px 14px;width:100%;font-size:14px;margin-bottom:14px;outline:none}
+    .cat-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .cat-tab{padding:6px 14px;border-radius:20px;border:1.5px solid #dde;background:#fff;cursor:pointer;font-size:12px;font-weight:500}
+    .cat-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .product-card{background:#fff;border-radius:10px;padding:12px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+    .product-card:hover{border-color:var(--brand-l);transform:translateY(-1px)}
+    .product-card .emoji{font-size:28px;margin-bottom:6px}
+    .product-card .pname{font-size:12px;font-weight:600;margin-bottom:3px}
+    .product-card .pprice{font-size:13px;color:var(--brand);font-weight:700}
+
+    /* RECEIPT PANEL */
+    .receipt-panel{background:#fff;border-left:1px solid #e2e8f0;display:flex;flex-direction:column}
+    .receipt-header{padding:14px 16px;border-bottom:1px solid #f0f0f0}
+    .receipt-header h3{font-size:15px;font-weight:700}
+    .customer-lookup{display:flex;gap:8px;margin-top:10px}
+    .customer-lookup input{flex:1;padding:9px 12px;border:1.5px solid #dde;border-radius:8px;font-size:13px;outline:none}
+    .customer-lookup button{padding:9px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+    .customer-info{margin-top:8px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:12px;display:none}
+    .customer-info .cname{font-weight:700;color:var(--brand)}
+    .customer-info .cpoints{color:var(--gold);font-weight:600}
+
+    .receipt-items{flex:1;overflow-y:auto;padding:10px 16px}
+    .receipt-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+    .receipt-item .qty{background:#f0f4f8;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600}
+    .receipt-item .remove{color:var(--red);cursor:pointer;font-size:16px;margin-left:8px}
+    .receipt-empty{text-align:center;opacity:0.4;margin-top:40px;font-size:13px}
+
+    .receipt-footer{padding:14px 16px;border-top:1px solid #f0f0f0}
+    .totals{margin-bottom:12px}
+    .total-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+    .total-row.big{font-size:16px;font-weight:700;border-top:1.5px solid #eee;padding-top:8px;margin-top:4px}
+    .pts-preview{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:10px;text-align:center}
+    .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .btn{padding:12px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px}
+    .btn-earn{background:var(--green);color:#fff}
+    .btn-redeem{background:var(--gold);color:#fff}
+    .btn-clear{background:#f0f4f8;color:#666;font-size:12px;grid-column:span 2}
+
+    /* FLOW OVERLAY */
+    .flow-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:100;flex-direction:column}
+    .flow-overlay.show{display:flex}
+    .flow-box{background:#fff;border-radius:16px;padding:28px;width:420px;text-align:center}
+    .flow-box h3{font-size:18px;font-weight:700;margin-bottom:20px}
+    .flow-steps{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+    .flow-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:#f8f8f8;text-align:left;transition:all 0.3s}
+    .flow-step.active{background:#eff6ff;border:1.5px solid #0057a8}
+    .flow-step.done{background:#f0fdf4;border:1.5px solid #16a34a}
+    .flow-step.done .step-icon{background:var(--green)}
+    .step-icon{width:32px;height:32px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all 0.3s}
+    .flow-step.active .step-icon{background:var(--brand);animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .step-label{font-size:13px;font-weight:600}
+    .step-detail{font-size:11px;opacity:0.6}
+
+    /* RECEIPT MODAL */
+    .receipt-modal{background:#fff;border-radius:16px;padding:28px;width:380px;font-family:"DM Mono",monospace}
+    .receipt-modal .r-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:4px}
+    .receipt-modal .r-sub{text-align:center;font-size:11px;opacity:0.5;margin-bottom:16px}
+    .receipt-modal hr{border:none;border-top:1px dashed #ddd;margin:10px 0}
+    .receipt-modal .r-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+    .receipt-modal .r-pts{text-align:center;padding:12px;background:#fffbeb;border-radius:8px;margin:10px 0}
+    .receipt-modal .r-pts .pts-val{font-size:24px;font-weight:700;color:var(--gold)}
+    .receipt-modal .close-btn{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:14px;font-family:"DM Sans",sans-serif}
+  </style>
+</head>
+<body>
+
+<div class="pos-header">
+  <div>
+    <div class="brand">🛒 FreshMart Supermarket</div>
+    <div class="sub">PointSphere Partner POS — Cashier Terminal</div>
+  </div>
+  <div class="time" id="clock">--:--:--</div>
+</div>
+
+<div class="pos-body">
+  <!-- PRODUCTS -->
+  <div class="products-panel">
+    <input class="search-bar" placeholder="🔍 Search products..." oninput="filterProducts(this.value)"/>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+
+  <!-- RECEIPT -->
+  <div class="receipt-panel">
+    <div class="receipt-header">
+      <h3>Current Transaction</h3>
+      <div class="customer-lookup">
+        <input id="custPhone" placeholder="Customer phone (7XXXXXXXX)" maxlength="9"/>
+        <button onclick="lookupCustomer()">Lookup</button>
+      </div>
+      <div class="customer-info" id="custInfo">
+        <div>Customer: <span class="cname" id="custName">—</span></div>
+        <div>Points: <span class="cpoints" id="custPoints">—</span> pts</div>
+      </div>
+    </div>
+
+    <div class="receipt-items" id="receiptItems">
+      <div class="receipt-empty">Add items to begin transaction</div>
+    </div>
+
+    <div class="receipt-footer">
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span id="subtotal">KSh 0</span></div>
+        <div class="total-row"><span>Items</span><span id="itemCount">0</span></div>
+        <div class="total-row big"><span>TOTAL</span><span id="total">KSh 0</span></div>
+      </div>
+      <div class="pts-preview" id="ptsPreview">Login a customer to see points preview</div>
+      <div class="action-btns">
+        <button class="btn btn-earn" onclick="processTransaction('earn')">✓ Earn Points</button>
+        <button class="btn btn-redeem" onclick="processTransaction('redeem')">★ Redeem Points</button>
+        <button class="btn btn-clear" onclick="clearAll()">✕ Clear Transaction</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOW OVERLAY -->
+<div class="flow-overlay" id="flowOverlay">
+  <div class="flow-box">
+    <h3 id="flowTitle">Processing Transaction...</h3>
+    <div class="flow-steps" id="flowSteps"></div>
+    <div id="flowResult" style="display:none;padding:12px;border-radius:10px;font-size:13px;"></div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="flow-overlay" id="receiptOverlay">
+  <div class="receipt-modal">
+    <div class="r-title">🛒 FreshMart</div>
+    <div class="r-sub">PointSphere Partner — Official Receipt</div>
+    <hr/>
+    <div id="receiptLines"></div>
+    <hr/>
+    <div class="r-pts" id="receiptPts"></div>
+    <hr/>
+    <div id="receiptMeta" style="font-size:11px;opacity:0.5;text-align:center;"></div>
+    <button class="close-btn" onclick="closeReceipt()">New Transaction</button>
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000/api";
+const POS_CONFIG = {
+  name: "FreshMart Supermarket",
+  partner_phone: "", // filled after login
+  token: "",
+  conversion_rate: 0.1
+};
+
+// ── Products ──────────────────────────────────
+const PRODUCTS = [
+  {id:1, name:"Milk 500ml",     price:65,   emoji:"🥛", cat:"Dairy"},
+  {id:2, name:"Bread Loaf",     price:55,   emoji:"🍞", cat:"Bakery"},
+  {id:3, name:"Eggs (tray)",    price:450,  emoji:"🥚", cat:"Dairy"},
+  {id:4, name:"Rice 2kg",       price:220,  emoji:"🍚", cat:"Grains"},
+  {id:5, name:"Cooking Oil 1L", price:280,  emoji:"🫙", cat:"Grains"},
+  {id:6, name:"Sugar 1kg",      price:150,  emoji:"🍬", cat:"Grains"},
+  {id:7, name:"Tomatoes 1kg",   price:80,   emoji:"🍅", cat:"Produce"},
+  {id:8, name:"Onions 1kg",     price:60,   emoji:"🧅", cat:"Produce"},
+  {id:9, name:"Bananas",        price:40,   emoji:"🍌", cat:"Produce"},
+  {id:10,name:"Chicken 1kg",    price:550,  emoji:"🍗", cat:"Meat"},
+  {id:11,name:"Beef 500g",      price:420,  emoji:"🥩", cat:"Meat"},
+  {id:12,name:"Water 1L",       price:50,   emoji:"💧", cat:"Drinks"},
+  {id:13,name:"Juice 500ml",    price:120,  emoji:"🧃", cat:"Drinks"},
+  {id:14,name:"Soda 500ml",     price:80,   emoji:"🥤", cat:"Drinks"},
+  {id:15,name:"Soap Bar",       price:45,   emoji:"🧼", cat:"Personal"},
+  {id:16,name:"Toothpaste",     price:110,  emoji:"🪥", cat:"Personal"},
+];
+
+let cart = [];
+let currentCustomer = null;
+let allProducts = [...PRODUCTS];
+let activeCategory = "All";
+
+const CATEGORIES = ["All", ...new Set(PRODUCTS.map(p => p.cat))];
+
+// ── Init ──────────────────────────────────────
+window.onload = async () => {
+  renderCats();
+  renderProducts(PRODUCTS);
+  startClock();
+  await loginPartner();
+};
+
+async function loginPartner() {
+  // Auto-login: find first partner token from localStorage or prompt
+  const stored = localStorage.getItem("pos_token_supermarket");
+  if (stored) { POS_CONFIG.token = stored; return; }
+
+  const phone = prompt("Partner phone (9 digits):");
+  const pin   = prompt("Partner PIN:");
+  if (!phone || !pin) return;
+
+  const res  = await fetch(`${API}/login/`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({phone, pin, role:"partner"})
+  });
+  const data = await res.json();
+  if (data.token) {
+    POS_CONFIG.token = data.token;
+    POS_CONFIG.name  = data.name;
+    localStorage.setItem("pos_token_supermarket", data.token);
+  } else {
+    alert("Login failed: " + (data.error || "Unknown error"));
+  }
+}
+
+function startClock() {
+  setInterval(() => {
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+  }, 1000);
+}
+
+// ── Products ──────────────────────────────────
+function renderCats() {
+  document.getElementById("catTabs").innerHTML = CATEGORIES.map(c =>
+    `<div class="cat-tab ${c==='All'?'active':''}" onclick="filterCat('${c}',this)">${c}</div>`
+  ).join("");
+}
+
+function filterCat(cat, el) {
+  activeCategory = cat;
+  document.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  renderProducts(cat === "All" ? PRODUCTS : PRODUCTS.filter(p => p.cat === cat));
+}
+
+function filterProducts(q) {
+  const filtered = PRODUCTS.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+  renderProducts(filtered);
+}
+
+function renderProducts(list) {
+  document.getElementById("productsGrid").innerHTML = list.map(p => `
+    <div class="product-card" onclick="addToCart(${p.id})">
+      <div class="emoji">${p.emoji}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pprice">KSh ${p.price}</div>
+    </div>`).join("");
+}
+
+// ── Cart ──────────────────────────────────────
+function addToCart(id) {
+  const product = PRODUCTS.find(p => p.id === id);
+  const existing = cart.find(i => i.id === id);
+  if (existing) existing.qty++;
+  else cart.push({...product, qty:1});
+  renderCart();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  renderCart();
+}
+
+function renderCart() {
+  const el = document.getElementById("receiptItems");
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const count = cart.reduce((s,i) => s + i.qty, 0);
+
+  if (cart.length === 0) {
+    el.innerHTML = `<div class="receipt-empty">Add items to begin transaction</div>`;
+  } else {
+    el.innerHTML = cart.map(i => `
+      <div class="receipt-item">
+        <span class="qty">${i.qty}x</span>
+        <span style="flex:1;margin:0 8px;">${i.name}</span>
+        <span>KSh ${(i.price*i.qty).toLocaleString()}</span>
+        <span class="remove" onclick="removeFromCart(${i.id})">×</span>
+      </div>`).join("");
+  }
+
+  document.getElementById("subtotal").innerText = `KSh ${total.toLocaleString()}`;
+  document.getElementById("total").innerText = `KSh ${total.toLocaleString()}`;
+  document.getElementById("itemCount").innerText = count;
+  updatePtsPreview(total);
+}
+
+function updatePtsPreview(total) {
+  const el = document.getElementById("ptsPreview");
+  if (!currentCustomer) {
+    el.innerText = "Lookup a customer to see points preview";
+    el.style.background = "#f8f8f8";
+    el.style.color = "#999";
+    return;
+  }
+  const pts = Math.floor(total * POS_CONFIG.conversion_rate);
+  el.style.background = "#fffbeb";
+  el.style.color = "#d97706";
+  el.innerHTML = `<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong> on KSh ${total.toLocaleString()} spend<br><span style="font-size:11px;opacity:0.7;">Current balance: ${currentCustomer.points} pts</span>`;
+}
+
+function clearAll() {
+  cart = [];
+  currentCustomer = null;
+  document.getElementById("custPhone").value = "";
+  document.getElementById("custInfo").style.display = "none";
+  renderCart();
+}
+
+// ── Customer Lookup ───────────────────────────
+async function lookupCustomer() {
+  const phone = document.getElementById("custPhone").value.trim();
+  if (phone.length !== 9) return alert("Phone must be 9 digits");
+
+  try {
+    const res = await fetch(`${API}/pos/customer-lookup/?phone=${phone}`, {
+      headers: {"Authorization": POS_CONFIG.token}
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+
+    currentCustomer = data;
+    document.getElementById("custName").innerText = data.name;
+    document.getElementById("custPoints").innerText = data.points.toLocaleString();
+    document.getElementById("custInfo").style.display = "block";
+
+    const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+    updatePtsPreview(total);
+  } catch(err) {
+    alert(err.error || "Customer not found");
+  }
+}
+
+// ── Transaction Flow ──────────────────────────
+const FLOW_STEPS = [
+  {label:"POS Terminal",       detail:"Preparing transaction data",        icon:"🖥"},
+  {label:"API Request Sent",   detail:"POST /api/pos/earn/ → Backend",     icon:"📡"},
+  {label:"Backend Processing", detail:"Calculating points & updating DB",  icon:"⚙️"},
+  {label:"Database Updated",   detail:"PostgreSQL transaction committed",   icon:"🗄"},
+  {label:"Points Confirmed",   detail:"Customer notified of new balance",  icon:"✅"},
+];
+
+function showFlow(title) {
+  document.getElementById("flowTitle").innerText = title;
+  document.getElementById("flowResult").style.display = "none";
+  document.getElementById("flowSteps").innerHTML = FLOW_STEPS.map((s,i) => `
+    <div class="flow-step" id="fstep${i}">
+      <div class="step-icon">${s.icon}</div>
+      <div><div class="step-label">${s.label}</div><div class="step-detail">${s.detail}</div></div>
+    </div>`).join("");
+  document.getElementById("flowOverlay").classList.add("show");
+}
+
+async function animateFlow(callback) {
+  for (let i = 0; i < FLOW_STEPS.length; i++) {
+    const el = document.getElementById(`fstep${i}`);
+    el.classList.add("active");
+    await sleep(i === 2 ? 800 : 500);
+    if (i === 2) {
+      // Actually call API here
+      try { await callback(); } catch(e) { console.error(e); }
+    }
+    el.classList.remove("active");
+    el.classList.add("done");
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function processTransaction(type) {
+  if (cart.length === 0) return alert("Add items first");
+  if (!currentCustomer) return alert("Lookup a customer first");
+  if (!POS_CONFIG.token) return alert("POS not logged in");
+
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const posRef = `SM-${Date.now()}`;
+  let apiResult = null;
+
+  showFlow(type === "earn" ? "Earning Points..." : "Redeeming Points...");
+
+  await animateFlow(async () => {
+    if (type === "earn") {
+      const res = await fetch(`${API}/pos/earn/`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json","Authorization":POS_CONFIG.token},
+        body: JSON.stringify({
+          phone: currentCustomer.phone,
+          amount_ksh: total,
+          pos_reference: posRef,
+          note: `FreshMart purchase — ${cart.length} items`
+        })
+      });
+      apiResult = await res.json();
+      if (!res.ok) throw apiResult;
+    } else {
+      const pts = parseInt(prompt(`Redeem how many points? (Balance: ${currentCustomer.points})`));
+      if (!pts) throw {error:"Cancelled"};
+      const res = await fetch(`${API}/pos/redeem/`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json","Authorization":POS_CONFIG.token},
+        body: JSON.stringify({
+          phone: currentCustomer.phone,
+          points: pts,
+          pos_reference: posRef,
+          note: "FreshMart redemption"
+        })
+      });
+      apiResult = await res.json();
+      if (!res.ok) throw apiResult;
+    }
+  });
+
+  await sleep(400);
+  document.getElementById("flowOverlay").classList.remove("show");
+
+  if (apiResult && apiResult.success) {
+    showReceipt(type, total, apiResult, posRef);
+  } else if (apiResult) {
+    alert("Error: " + (apiResult.error || "Unknown error"));
+  }
+}
+
+function showReceipt(type, total, result, posRef) {
+  const lines = cart.map(i =>
+    `<div class="r-row"><span>${i.qty}x ${i.name}</span><span>KSh ${(i.price*i.qty).toLocaleString()}</span></div>`
+  ).join("");
+
+  document.getElementById("receiptLines").innerHTML = `
+    ${lines}
+    <div class="r-row" style="font-weight:700;margin-top:6px;"><span>TOTAL</span><span>KSh ${total.toLocaleString()}</span></div>`;
+
+  if (type === "earn") {
+    document.getElementById("receiptPts").innerHTML = `
+      <div style="font-size:12px;margin-bottom:4px;">Points Earned</div>
+      <div class="pts-val">+${result.points_awarded} pts</div>
+      <div style="font-size:11px;margin-top:4px;">New Balance: ${result.new_balance} pts</div>`;
+  } else {
+    document.getElementById("receiptPts").innerHTML = `
+      <div style="font-size:12px;margin-bottom:4px;">Points Redeemed</div>
+      <div class="pts-val" style="color:#dc2626;">-${result.points_redeemed} pts</div>
+      <div style="font-size:11px;margin-top:4px;">New Balance: ${result.new_balance} pts</div>`;
+  }
+
+  document.getElementById("receiptMeta").innerHTML =
+    `${result.customer_name} | Ref: ${posRef} | ${new Date().toLocaleString()}`;
+
+  document.getElementById("receiptOverlay").classList.add("show");
+}
+
+function closeReceipt() {
+  document.getElementById("receiptOverlay").classList.remove("show");
+  clearAll();
+}
+</script>
+</body>
+</html>

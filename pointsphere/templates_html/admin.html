@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PointSphere – Admin Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--accent:#8b6fd4;--accent-l:#b09ee8;--bg:#0a0c14;--card:#111420;--border:rgba(138,111,212,0.16);--cream:#faf6ef;--green:#7ecc4a;--red:#d94040}
+    body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--cream);min-height:100vh}
+    .shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+    .sidebar{background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column}
+    .sb-logo{display:flex;align-items:center;gap:10px;padding:1.5rem 1.25rem;border-bottom:1px solid var(--border)}
+    .logo-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),#c4622d);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:"Playfair Display";font-size:17px;font-weight:900}
+    .logo-txt{font-family:"Playfair Display";font-size:1.1rem;font-weight:700}.logo-txt span{color:var(--accent-l)}
+    .nav-item{padding:0.6rem 1.25rem;cursor:pointer;font-size:13px;color:rgba(250,246,239,0.65)}
+    .nav-item.active,.nav-item:hover{color:#fff;background:rgba(138,111,212,0.15)}
+    .main{overflow-y:auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;border-bottom:1px solid var(--border)}
+    .content{padding:2rem}
+    .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+    .kpi-card{background:var(--card);padding:1rem;border-radius:12px;border:1px solid var(--border)}
+    .kpi-val{font-size:1.8rem;font-family:"Playfair Display";color:var(--accent-l);margin-top:4px}
+    .kpi-label{font-size:11px;opacity:0.5}
+    .section-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-top:1.2rem}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:0.8rem;text-align:left;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    th{opacity:0.5;font-size:11px}
+    .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge.active{background:rgba(126,204,74,0.15);color:#7ecc4a}
+    .badge.inactive{background:rgba(217,64,64,0.15);color:#d94040}
+    .badge.low{background:rgba(255,160,0,0.15);color:#ffa500}
+    .btn{padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:transparent;color:#fff;cursor:pointer;font-size:12px}
+    .btn.primary{background:var(--accent);border:none}
+    .btn.danger{background:var(--red);border:none}
+    .page{display:none}.page.active{display:block}
+    .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center}
+    .modal.open{display:flex}
+    .modal-content{background:var(--card);padding:20px;border-radius:12px;width:340px;border:1px solid var(--border)}
+    .modal-content h3{margin-bottom:12px}
+    .modal-content input,.modal-content select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;font-size:13px}
+    .modal-content select option{background:#1a1a2e}
+    .close{float:right;cursor:pointer;font-size:18px}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .result-msg{margin-top:8px;font-size:13px;padding:6px 10px;border-radius:6px}
+    .result-ok{background:rgba(126,204,74,0.1);color:#7ecc4a}
+    .result-err{background:rgba(217,64,64,0.1);color:#d94040}
+    .audit-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px}
+    .audit-action{background:rgba(138,111,212,0.15);color:var(--accent-l);padding:2px 8px;border-radius:20px;font-size:11px;white-space:nowrap}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-mark">P</div>
+      <div class="logo-txt">Point<span>Sphere</span></div>
+    </div>
+    <div class="nav-item active" onclick="navTo('overview',this)">Overview</div>
+    <div class="nav-item" onclick="navTo('partners',this)">Partners</div>
+    <div class="nav-item" onclick="navTo('float',this)">Float Management</div>
+    <div class="nav-item" onclick="navTo('rates',this)">Conversion Rates</div>
+    <div class="nav-item" onclick="navTo('cashiers',this)">Cashiers</div>
+    <div class="nav-item" onclick="navTo('audit',this)">Audit Log</div>
+    <div class="nav-item" onclick="logout()">Logout</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>Admin Console</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn primary" onclick="downloadReport()">⬇ Download Report</button>
+        <button class="btn" onclick="loadAll()">↻ Refresh</button>
+        <button class="btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div id="overview" class="page active">
+        <div class="kpi-strip">
+          <div class="kpi-card"><div class="kpi-label">Customers</div><div class="kpi-val" id="totalCustomers">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Partners</div><div class="kpi-val" id="totalPartners">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Points in Circulation</div><div class="kpi-val" id="totalPoints">—</div></div>
+          <div class="kpi-card"><div class="kpi-label">Total Float (KSh)</div><div class="kpi-val" id="totalFloat">—</div></div>
+        </div>
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">Partners at a Glance</h3>
+          <table>
+            <tr><th>Name</th><th>Business</th><th>Float (KSh)</th><th>Rate</th><th>Status</th><th>Action</th></tr>
+            <tbody id="overviewTable"><tr><td colspan="6" style="opacity:0.5;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PARTNERS -->
+      <div id="partners" class="page">
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">All Partners</h3>
+          <table>
+            <tr><th>Name</th><th>Phone</th><th>Float (KSh)</th><th>Min Threshold</th><th>Status</th><th>Action</th></tr>
+            <tbody id="partnerTable"><tr><td colspan="6" style="opacity:0.5;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FLOAT MANAGEMENT -->
+      <div id="float" class="page">
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">Deposit Float for Partner</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:500px;">
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Partner</label>
+              <select id="floatPartner" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;"></select>
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Amount (KSh)</label>
+              <input id="floatAmount" type="number" placeholder="e.g. 50000" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Reference (cheque/mpesa)</label>
+              <input id="floatRef" placeholder="e.g. CHQ-001" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Note</label>
+              <input id="floatNote" placeholder="Float top-up" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+          </div>
+          <button class="btn primary" style="margin-top:12px;" onclick="depositFloat()">Deposit Float</button>
+          <div id="floatResult"></div>
+        </div>
+      </div>
+
+      <!-- CONVERSION RATES -->
+      <div id="rates" class="page">
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">Set Conversion Rate</h3>
+          <p style="font-size:13px;opacity:0.6;margin-bottom:12px;">Define how many points a customer earns per KSh spent at each partner.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;max-width:600px;">
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Partner</label>
+              <select id="ratePartner" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;"></select>
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Points per KSh</label>
+              <input id="rateValue" type="number" step="0.01" placeholder="e.g. 0.1" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Min Spend (KSh)</label>
+              <input id="rateMinSpend" type="number" placeholder="e.g. 100" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+          </div>
+          <button class="btn primary" style="margin-top:12px;" onclick="setRate()">Save Rate</button>
+          <div id="rateResult"></div>
+        </div>
+        <div class="section-card" style="margin-top:1rem;">
+          <h3 style="margin-bottom:1rem;">Current Rates</h3>
+          <table>
+            <tr><th>Partner</th><th>Points per KSh</th><th>Min Spend (KSh)</th><th>Last Updated</th></tr>
+            <tbody id="ratesTable"><tr><td colspan="4" style="opacity:0.5;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CASHIERS -->
+      <div id="cashiers" class="page">
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">Add Cashier</h3>
+          <p style="font-size:13px;opacity:0.6;margin-bottom:12px;">Cashiers are linked to a partner and can issue/redeem points via POS.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;">
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Full Name</label>
+              <input id="cashierName" placeholder="Cashier name" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Phone (9 digits)</label>
+              <input id="cashierPhone" placeholder="7XXXXXXXX" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">4-digit PIN</label>
+              <input id="cashierPin" type="password" maxlength="4" placeholder="••••" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;" />
+            </div>
+            <div>
+              <label style="font-size:12px;opacity:0.6;">Assign to Partner</label>
+              <select id="cashierPartner" style="width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:white;"></select>
+            </div>
+          </div>
+          <button class="btn primary" style="margin-top:12px;" onclick="addCashier()">Add Cashier</button>
+          <div id="cashierResult"></div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div id="audit" class="page">
+        <div class="section-card">
+          <h3 style="margin-bottom:1rem;">System Audit Log</h3>
+          <div id="auditList"><p style="opacity:0.5;">Loading...</p></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const API = "http://127.0.0.1:8000/api";
+  const token = localStorage.getItem("token");
+  if (!token || localStorage.getItem("role") !== "admin") { alert("Unauthorized"); window.location.href = "index.html"; }
+
+  let partnersData = [];
+
+  async function loadAll() {
+    await loadDashboard();
+    await loadRates();
+    await loadAudit();
+  }
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch(`${API}/admin/dashboard/`, { headers: { "Authorization": token } });
+      const data = await res.json();
+      if (!res.ok) throw data;
+
+      document.getElementById("totalCustomers").innerText = data.total_customers.toLocaleString();
+      document.getElementById("totalPartners").innerText = data.total_partners.toLocaleString();
+      document.getElementById("totalPoints").innerText = data.total_points_in_circulation.toLocaleString();
+      document.getElementById("totalFloat").innerText = data.total_float.toLocaleString();
+
+      partnersData = data.partners;
+
+      // Populate partner selects
+      ["floatPartner","ratePartner","cashierPartner"].forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = partnersData.map(p => `<option value="${p.id}">${p.business_name} (${p.phone})</option>`).join("");
+      });
+
+      // Overview table
+      document.getElementById("overviewTable").innerHTML = partnersData.length === 0
+        ? "<tr><td colspan='6' style='opacity:0.5;'>No partners yet.</td></tr>"
+        : partnersData.map(p => `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.business_name}</td>
+            <td>${p.float_balance.toLocaleString()} ${p.float_low ? '<span class="badge low">LOW</span>' : ''}</td>
+            <td>${p.conversion_rate} pt/KSh</td>
+            <td><span class="badge ${p.is_active?'active':'inactive'}">${p.is_active?'Active':'Inactive'}</span></td>
+            <td><button class="btn ${p.is_active?'danger':''}" onclick="togglePartner(${p.id})">${p.is_active?'Deactivate':'Activate'}</button></td>
+          </tr>`).join("");
+
+      // Partners full table
+      document.getElementById("partnerTable").innerHTML = partnersData.length === 0
+        ? "<tr><td colspan='6' style='opacity:0.5;'>No partners yet.</td></tr>"
+        : partnersData.map(p => `
+          <tr>
+            <td>${p.name}</td>
+            <td>${p.phone}</td>
+            <td>KSh ${p.float_balance.toLocaleString()} ${p.float_low ? '<span class="badge low">LOW</span>' : ''}</td>
+            <td>KSh ${p.min_float_threshold.toLocaleString()}</td>
+            <td><span class="badge ${p.is_active?'active':'inactive'}">${p.is_active?'Active':'Inactive'}</span></td>
+            <td><button class="btn ${p.is_active?'danger':''}" onclick="togglePartner(${p.id})">${p.is_active?'Deactivate':'Activate'}</button></td>
+          </tr>`).join("");
+
+    } catch(err) { console.error(err); }
+  }
+
+  async function togglePartner(id) {
+    try {
+      const res = await fetch(`${API}/admin/toggle-partner/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ partner_id: id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      loadDashboard();
+    } catch(err) { alert(err.error || "Failed"); }
+  }
+
+  async function depositFloat() {
+    const partner_id = document.getElementById("floatPartner").value;
+    const amount     = parseFloat(document.getElementById("floatAmount").value);
+    const reference  = document.getElementById("floatRef").value.trim();
+    const note       = document.getElementById("floatNote").value.trim() || "Float deposit";
+    const resultEl   = document.getElementById("floatResult");
+
+    if (!amount || amount <= 0) return showResult(resultEl, "Enter a valid amount", false);
+
+    try {
+      const res = await fetch(`${API}/admin/float/deposit/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ partner_id, amount, reference, note })
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      showResult(resultEl, `✅ ${data.message}. New balance: KSh ${data.new_balance.toLocaleString()}`, true);
+      loadDashboard();
+    } catch(err) { showResult(resultEl, "❌ " + (err.error || "Failed"), false); }
+  }
+
+  async function setRate() {
+    const partner_id     = document.getElementById("ratePartner").value;
+    const points_per_ksh = parseFloat(document.getElementById("rateValue").value);
+    const min_spend_ksh  = parseFloat(document.getElementById("rateMinSpend").value) || 0;
+    const resultEl       = document.getElementById("rateResult");
+
+    if (!points_per_ksh || points_per_ksh <= 0) return showResult(resultEl, "Enter a valid rate", false);
+
+    try {
+      const res = await fetch(`${API}/admin/conversion-rates/set/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ partner_id, points_per_ksh, min_spend_ksh })
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      showResult(resultEl, `✅ ${data.message}`, true);
+      loadRates();
+    } catch(err) { showResult(resultEl, "❌ " + (err.error || "Failed"), false); }
+  }
+
+  async function loadRates() {
+    try {
+      const res = await fetch(`${API}/admin/conversion-rates/`, { headers: { "Authorization": token } });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      document.getElementById("ratesTable").innerHTML = data.rates.length === 0
+        ? "<tr><td colspan='4' style='opacity:0.5;'>No rates set yet.</td></tr>"
+        : data.rates.map(r => `
+          <tr>
+            <td>${r.partner_name}</td>
+            <td>${r.points_per_ksh} pt/KSh</td>
+            <td>KSh ${r.min_spend_ksh}</td>
+            <td style="opacity:0.5;">${r.updated_at}</td>
+          </tr>`).join("");
+    } catch(err) { console.error(err); }
+  }
+
+  async function addCashier() {
+    const name       = document.getElementById("cashierName").value.trim();
+    const phone      = document.getElementById("cashierPhone").value.trim();
+    const pin        = document.getElementById("cashierPin").value.trim();
+    const partner_id = document.getElementById("cashierPartner").value;
+    const resultEl   = document.getElementById("cashierResult");
+
+    try {
+      const res = await fetch(`${API}/admin/cashier/add/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ name, phone, pin, partner_id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      showResult(resultEl, "✅ " + data.message, true);
+      document.getElementById("cashierName").value = "";
+      document.getElementById("cashierPhone").value = "";
+      document.getElementById("cashierPin").value = "";
+    } catch(err) { showResult(resultEl, "❌ " + (err.error || "Failed"), false); }
+  }
+
+  async function loadAudit() {
+    try {
+      const res = await fetch(`${API}/admin/audit-log/`, { headers: { "Authorization": token } });
+      const data = await res.json();
+      if (!res.ok) throw data;
+      document.getElementById("auditList").innerHTML = data.logs.length === 0
+        ? "<p style='opacity:0.5;'>No audit entries yet.</p>"
+        : data.logs.map(l => `
+          <div class="audit-row">
+            <span style="opacity:0.4;white-space:nowrap;">${l.date}</span>
+            <span class="audit-action">${l.action}</span>
+            <span style="font-weight:500;">${l.user}</span>
+            <span style="opacity:0.5;">${l.target}</span>
+            <span style="opacity:0.3;font-size:11px;">${l.ip||''}</span>
+          </div>`).join("");
+    } catch(err) { console.error(err); }
+  }
+
+  function showResult(el, msg, ok) {
+    el.className = "result-msg " + (ok ? "result-ok" : "result-err");
+    el.innerText = msg;
+  }
+
+  function downloadReport() { window.open(`${API}/admin/report/?token=${token}`, "_blank"); }
+
+  function navTo(id, el) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    el.classList.add("active");
+  }
+
+  function logout() { localStorage.clear(); window.location.href = "index.html"; }
+
+  loadAll();
+</script>
+</body>
+</html>

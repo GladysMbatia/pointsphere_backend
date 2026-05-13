@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PointSphere</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary: #c4622d;
+        --accent: #e07b39;
+        --bg: #0f0a07;
+      }
+
+      body {
+        margin: 0;
+        font-family: "DM Sans", sans-serif;
+        background: radial-gradient(circle at top right, #2a140a, #0f0a07 70%);
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #faf6ef;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 420px;
+        padding: 32px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      h2 {
+        font-family: "Playfair Display";
+      }
+      p {
+        color: #b8a49a;
+      }
+
+      input {
+        width: 100%;
+        padding: 13px;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+
+      .toggle {
+        display: flex;
+        position: relative;
+        background: #0c0c0c;
+        border-radius: 14px;
+        padding: 4px;
+        margin-bottom: 14px;
+      }
+
+      .slider {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        width: calc(33.33% - 4px);
+        border-radius: 10px;
+        background: linear-gradient(135deg, #c4622d, #e07b39);
+        transition: 0.3s;
+      }
+
+      .role-btn,
+      .mode-btn {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        color: #aaa;
+      }
+
+      .active-text {
+        color: #fff !important;
+      }
+
+      .pin {
+        display: flex;
+        gap: 8px;
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c4622d, #e07b39);
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+      <h2 id="title">Welcome back</h2>
+      <p id="subtitle">Sign in to your PointSphere account</p>
+
+      <!-- ROLE -->
+      <div class="toggle" id="roleToggle">
+        <div class="slider" id="roleSlider"></div>
+        <div class="role-btn active-text" onclick="switchRole('customer')">
+          Customer
+        </div>
+        <div class="role-btn" onclick="switchRole('partner')">Partner</div>
+        <div class="role-btn" onclick="switchRole('admin')">Admin</div>
+      </div>
+
+      <!-- MODE -->
+      <div class="toggle" id="modeToggle">
+        <div class="slider" id="modeSlider"></div>
+        <div class="mode-btn active-text" onclick="switchMode('signin')">
+          Sign In
+        </div>
+        <div class="mode-btn" onclick="switchMode('register')">Create</div>
+      </div>
+
+      <input
+        type="text"
+        id="name"
+        placeholder="Full Name"
+        style="display: none"
+      />
+      <input type="tel" id="phone" placeholder="7XXXXXXXX" />
+
+      <div class="pin">
+        <input maxlength="1" id="p1" oninput="move(this, 'p2')" />
+        <input maxlength="1" id="p2" oninput="move(this, 'p3')" />
+        <input maxlength="1" id="p3" oninput="move(this, 'p4')" />
+        <input maxlength="1" id="p4" />
+      </div>
+
+      <div class="pin" id="confirmPin" style="display: none">
+        <input maxlength="1" id="c1" />
+        <input maxlength="1" id="c2" />
+        <input maxlength="1" id="c3" />
+        <input maxlength="1" id="c4" />
+      </div>
+
+      <br />
+      <button onclick="handle()">Continue</button>
+    </div>
+
+    <script>
+      const API = "http://127.0.0.1:8000/api"; // Django backend
+
+      let mode = "signin";
+      let role = "customer";
+
+      /* SWITCH ROLE */
+      function switchRole(r) {
+        role = r;
+        document.getElementById("roleSlider").style.transform =
+          r === "customer"
+            ? "translateX(0%)"
+            : r === "partner"
+              ? "translateX(100%)"
+              : "translateX(200%)";
+      }
+
+      /* SWITCH MODE */
+      function switchMode(m) {
+        mode = m;
+        document.getElementById("modeSlider").style.transform =
+          m === "signin" ? "translateX(0%)" : "translateX(100%)";
+
+        document.getElementById("name").style.display =
+          m === "register" ? "block" : "none";
+
+        document.getElementById("confirmPin").style.display =
+          m === "register" ? "flex" : "none";
+      }
+
+      /* PIN */
+      function move(el, next) {
+        el.value = el.value.replace(/\D/g, "");
+        if (el.value && next) document.getElementById(next).focus();
+      }
+
+      function getPin(p) {
+        return [1, 2, 3, 4]
+          .map((i) => document.getElementById(p + i)?.value || "")
+          .join("");
+      }
+
+      /* MAIN HANDLER */
+      async function handle() {
+        const phone = document.getElementById("phone").value;
+        const pin = getPin("p");
+
+        if (phone.length !== 9) return alert("Invalid phone");
+        if (pin.length !== 4) return alert("Enter PIN");
+
+        try {
+          if (mode === "register") {
+            const name = document.getElementById("name").value;
+            const confirm = getPin("c");
+
+            if (pin !== confirm) return alert("PIN mismatch");
+
+            const res = await fetch(`${API}/register/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, phone, pin, role }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) throw data;
+
+            alert("Account created!");
+          } else {
+            const res = await fetch(`${API}/login/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ phone, pin, role }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) throw data;
+
+            /* SAVE SESSION */
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("role", data.role);
+            localStorage.setItem("name", data.name);
+
+            /* REDIRECT */
+            if (data.role === "admin") window.location = "admin.html";
+            if (data.role === "partner") window.location = "partner.html";
+            if (data.role === "customer") window.location = "customer.html";
+          }
+        } catch (err) {
+          alert(err.error || "Something went wrong");
+        }
+      }
+    </script>
+  </body>
+</html>
