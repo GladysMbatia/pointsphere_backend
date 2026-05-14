@@ -4,304 +4,236 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Shell Station POS – PointSphere</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--brand:#cc0000;--brand-l:#e63333;--bg:#1a1a1a;--card:#242424;--white:#fff;--dark:#1a1a1a;--green:#16a34a;--gold:#d97706;--text:#f0f0f0}
-    body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    .pos-header{background:var(--brand);color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
-    .pos-header .brand{font-size:20px;font-weight:700}
-    .pos-header .sub{font-size:12px;opacity:0.7}
-    .pos-header .time{font-family:"DM Mono";font-size:14px}
-    .pos-body{display:grid;grid-template-columns:1fr 380px;gap:0;height:calc(100vh - 52px)}
-    .products-panel{padding:20px;overflow-y:auto}
-    .panel-title{font-size:14px;font-weight:600;opacity:0.5;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px}
-    .fuel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px}
-    .fuel-card{background:var(--card);border-radius:12px;padding:20px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
-    .fuel-card:hover{border-color:var(--brand-l)}
-    .fuel-card .emoji{font-size:36px;margin-bottom:10px}
-    .fuel-card .fname{font-size:15px;font-weight:700;margin-bottom:4px}
-    .fuel-card .fprice{font-size:13px;color:var(--brand-l);font-weight:600}
-    .fuel-card .fdesc{font-size:11px;opacity:0.5;margin-top:3px}
-    .litre-input{background:var(--card);border-radius:12px;padding:16px;margin-bottom:20px}
-    .litre-input label{font-size:12px;opacity:0.5;display:block;margin-bottom:6px}
-    .litre-input input{width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#fff;font-size:16px;font-family:"DM Mono";outline:none}
-    .shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    .shop-card{background:var(--card);border-radius:10px;padding:12px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
-    .shop-card:hover{border-color:var(--brand-l)}
-    .shop-card .emoji{font-size:24px;margin-bottom:6px}
-    .shop-card .sname{font-size:12px;font-weight:600;margin-bottom:3px}
-    .shop-card .sprice{font-size:12px;color:var(--brand-l);font-weight:600}
-    .receipt-panel{background:var(--card);border-left:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column}
-    .receipt-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .receipt-header h3{font-size:15px;font-weight:700}
-    .customer-lookup{display:flex;gap:8px;margin-top:10px}
-    .customer-lookup input{flex:1;padding:9px 12px;border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;outline:none;background:rgba(255,255,255,0.05);color:#fff}
-    .customer-lookup button{padding:9px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
-    .customer-info{margin-top:8px;padding:8px 12px;background:rgba(204,0,0,0.1);border-radius:8px;font-size:12px;display:none;border:1px solid rgba(204,0,0,0.2)}
-    .customer-info .cname{font-weight:700;color:var(--brand-l)}
-    .customer-info .cpoints{color:var(--gold);font-weight:600}
-    .receipt-items{flex:1;overflow-y:auto;padding:10px 16px}
-    .receipt-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
-    .receipt-item .qty{background:rgba(255,255,255,0.08);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600}
-    .receipt-item .remove{color:#e84040;cursor:pointer;font-size:16px;margin-left:8px}
-    .receipt-empty{text-align:center;opacity:0.3;margin-top:40px;font-size:13px}
-    .receipt-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,0.06)}
-    .totals{margin-bottom:12px}
-    .total-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;opacity:0.8}
-    .total-row.big{font-size:16px;font-weight:700;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:4px;opacity:1}
-    .pts-preview{background:rgba(217,119,6,0.1);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:10px;text-align:center}
-    .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .btn{padding:12px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px}
+    :root{--brand:#cc0000;--bg:#1a1a1a;--card:#242424;--dark:#1a1a1a;--green:#16a34a;--gold:#d97706;--red:#dc2626;--text:#f0f0f0}
+    body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    .header{background:var(--brand);color:#fff;padding:14px 28px;display:flex;justify-content:space-between;align-items:center}
+    .header .brand{font-size:20px;font-weight:700}
+    .header .sub{font-size:12px;opacity:0.7;margin-top:2px}
+    .header .time{font-family:"DM Mono";font-size:15px}
+    .body{flex:1;display:flex;align-items:center;justify-content:center;padding:32px}
+    .terminal{background:var(--card);border-radius:20px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.4);overflow:hidden;border:1px solid rgba(255,255,255,0.06)}
+    .terminal-header{background:var(--brand);color:#fff;padding:20px 24px}
+    .terminal-header h2{font-size:18px;font-weight:700}
+    .terminal-header p{font-size:12px;opacity:0.7;margin-top:3px}
+    .terminal-body{padding:24px}
+    .field{margin-bottom:16px}
+    .field label{display:block;font-size:12px;font-weight:600;opacity:0.5;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+    .field input,.field select{width:100%;padding:13px 16px;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;font-size:16px;font-family:"DM Mono";outline:none;background:rgba(255,255,255,0.06);color:#fff;transition:border 0.2s}
+    .field input:focus,.field select:focus{border-color:var(--brand)}
+    .field select option{background:#242424}
+    .lookup-row{display:flex;gap:8px}
+    .lookup-row input{flex:1}
+    .lookup-btn{padding:13px 18px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+    .customer-card{background:rgba(204,0,0,0.1);border:1.5px solid rgba(204,0,0,0.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:none}
+    .customer-card .cname{font-weight:700;font-size:15px;color:#ff6b6b}
+    .customer-card .cpts{font-size:13px;color:var(--gold);margin-top:3px}
+    .pts-preview{background:rgba(217,119,6,0.1);border:1px solid rgba(217,119,6,0.25);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--gold);margin-bottom:16px;text-align:center;display:none}
+    .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{padding:14px;border:none;border-radius:12px;cursor:pointer;font-weight:700;font-size:15px;transition:opacity 0.15s}
+    .btn:hover{opacity:0.88}
     .btn-earn{background:var(--green);color:#fff}
     .btn-redeem{background:var(--gold);color:#fff}
-    .btn-clear{background:rgba(255,255,255,0.06);color:#aaa;font-size:12px;grid-column:span 2}
-    .flow-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:100;flex-direction:column}
-    .flow-overlay.show{display:flex}
-    .flow-box{background:#1e1e1e;border-radius:16px;padding:28px;width:420px;text-align:center;border:1px solid rgba(255,255,255,0.1)}
-    .flow-box h3{font-size:18px;font-weight:700;margin-bottom:20px;color:#fff}
-    .flow-steps{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
-    .flow-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);text-align:left;transition:all 0.3s}
-    .flow-step.active{background:rgba(204,0,0,0.15);border:1.5px solid var(--brand)}
-    .flow-step.done{background:rgba(22,163,74,0.1);border:1.5px solid #16a34a}
-    .step-icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-    .flow-step.active .step-icon{animation:pulse 1s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-    .step-label{font-size:13px;font-weight:600;color:#fff}
-    .step-detail{font-size:11px;opacity:0.5;color:#fff}
-    .receipt-modal{background:#1e1e1e;border-radius:16px;padding:28px;width:380px;font-family:"DM Mono",monospace;border:1px solid rgba(255,255,255,0.1)}
-    .receipt-modal .r-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:4px;color:#fff}
-    .receipt-modal .r-sub{text-align:center;font-size:11px;opacity:0.5;margin-bottom:16px;color:#fff}
-    .receipt-modal hr{border:none;border-top:1px dashed rgba(255,255,255,0.15);margin:10px 0}
-    .receipt-modal .r-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#ccc}
-    .receipt-modal .r-pts{text-align:center;padding:12px;background:rgba(217,119,6,0.1);border-radius:8px;margin:10px 0;border:1px solid rgba(217,119,6,0.2)}
-    .receipt-modal .r-pts .pts-val{font-size:24px;font-weight:700;color:var(--gold)}
-    .receipt-modal .close-btn{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:14px;font-family:"DM Sans",sans-serif}
+    .btn-clear{background:rgba(255,255,255,0.06);color:#aaa;font-size:13px;grid-column:span 2;padding:10px}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:50}
+    .overlay.show{display:flex}
+    .flow-box{background:#1e1e1e;border-radius:20px;padding:32px;width:400px;border:1px solid rgba(255,255,255,0.08)}
+    .flow-box h3{font-size:17px;font-weight:700;margin-bottom:20px;text-align:center;color:#fff}
+    .flow-steps{display:flex;flex-direction:column;gap:10px}
+    .fstep{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);transition:all 0.3s}
+    .fstep.active{background:rgba(204,0,0,0.15);border:1.5px solid var(--brand)}
+    .fstep.done{background:rgba(22,163,74,0.1);border:1.5px solid var(--green)}
+    .fstep .icon{font-size:18px;width:32px;text-align:center}
+    .fstep.active .icon{animation:pulse 0.8s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    .fstep .label{font-size:13px;font-weight:600;color:#fff}
+    .fstep .detail{font-size:11px;opacity:0.5;color:#fff}
+    .receipt-box{background:#1e1e1e;border-radius:20px;padding:28px;width:360px;font-family:"DM Mono",monospace;border:1px solid rgba(255,255,255,0.08)}
+    .receipt-box .rtitle{text-align:center;font-size:17px;font-weight:700;margin-bottom:3px;color:#fff}
+    .receipt-box .rsub{text-align:center;font-size:11px;opacity:0.4;margin-bottom:14px;color:#fff}
+    .receipt-box hr{border:none;border-top:1px dashed rgba(255,255,255,0.15);margin:10px 0}
+    .rrow{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#ccc}
+    .rpts{text-align:center;padding:14px;background:rgba(217,119,6,0.1);border-radius:10px;margin:10px 0;border:1px solid rgba(217,119,6,0.2)}
+    .rpts .pval{font-size:28px;font-weight:700;color:var(--gold)}
+    .rpts .psub{font-size:12px;opacity:0.6;margin-top:4px;color:var(--gold)}
+    .rmeta{text-align:center;font-size:10px;opacity:0.4;margin-top:6px;color:#ccc}
+    .close-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:16px;font-family:"DM Sans",sans-serif}
   </style>
 </head>
 <body>
-<div class="pos-header">
+<div class="header">
   <div>
     <div class="brand">⛽ Shell Fuel Station</div>
-    <div class="sub">PointSphere Partner POS — Pump Terminal</div>
+    <div class="sub">PointSphere Partner Terminal</div>
   </div>
   <div class="time" id="clock">--:--:--</div>
 </div>
-<div class="pos-body">
-  <div class="products-panel">
-    <div class="panel-title">Fuel Types</div>
-    <div class="fuel-grid" id="fuelGrid"></div>
-    <div class="litre-input">
-      <label>Litres (or leave 0 to use amount directly)</label>
-      <input type="number" id="litresInput" placeholder="e.g. 20" min="0" step="0.5" oninput="calcFuelAmount()"/>
+<div class="body">
+  <div class="terminal">
+    <div class="terminal-header">
+      <h2>Pump Transaction</h2>
+      <p>Enter customer phone and transaction amount</p>
     </div>
-    <div class="panel-title">Shop Items</div>
-    <div class="shop-grid" id="shopGrid"></div>
-  </div>
-  <div class="receipt-panel">
-    <div class="receipt-header">
-      <h3>Pump Transaction</h3>
-      <div class="customer-lookup">
-        <input id="custPhone" placeholder="Customer phone (7XXXXXXXX)" maxlength="9"/>
-        <button onclick="lookupCustomer()">Lookup</button>
+    <div class="terminal-body">
+      <div class="field">
+        <label>Customer Phone</label>
+        <div class="lookup-row">
+          <input id="phone" type="tel" placeholder="7XXXXXXXX" maxlength="9" oninput="resetCustomer()"/>
+          <button class="lookup-btn" onclick="lookupCustomer()">Lookup</button>
+        </div>
       </div>
-      <div class="customer-info" id="custInfo">
-        <div>Customer: <span class="cname" id="custName">—</span></div>
-        <div>Points: <span class="cpoints" id="custPoints">—</span> pts</div>
+      <div class="customer-card" id="custCard">
+        <div class="cname" id="custName">—</div>
+        <div class="cpts" id="custPts">— pts</div>
       </div>
-    </div>
-    <div class="receipt-items" id="receiptItems"><div class="receipt-empty">Select fuel or shop items</div></div>
-    <div class="receipt-footer">
-      <div class="totals">
-        <div class="total-row"><span>Subtotal</span><span id="subtotal">KSh 0</span></div>
-        <div class="total-row"><span>Items</span><span id="itemCount">0</span></div>
-        <div class="total-row big"><span>TOTAL</span><span id="total">KSh 0</span></div>
+      <div class="field">
+        <label>Fuel Type</label>
+        <select id="fuelType">
+          <option value="Super Petrol">Super Petrol — KSh 185/L</option>
+          <option value="Premium Petrol">Premium Petrol — KSh 192/L</option>
+          <option value="Diesel">Diesel — KSh 175/L</option>
+          <option value="Kerosene">Kerosene — KSh 145/L</option>
+        </select>
       </div>
-      <div class="pts-preview" id="ptsPreview">Lookup a customer to see points preview</div>
+      <div class="field">
+        <label>Amount Spent (KSh)</label>
+        <input id="amount" type="number" placeholder="e.g. 3000" min="1" oninput="updatePreview()"/>
+      </div>
+      <div class="field">
+        <label>POS Reference (optional)</label>
+        <input id="posRef" placeholder="e.g. PMP-00789"/>
+      </div>
+      <div class="pts-preview" id="ptsPreview"></div>
       <div class="action-btns">
-        <button class="btn btn-earn" onclick="processTransaction('earn')">✓ Earn Points</button>
-        <button class="btn btn-redeem" onclick="processTransaction('redeem')">★ Redeem Points</button>
+        <button class="btn btn-earn" onclick="process('earn')">✓ Earn Points</button>
+        <button class="btn btn-redeem" onclick="process('redeem')">★ Redeem Points</button>
         <button class="btn btn-clear" onclick="clearAll()">✕ Clear</button>
       </div>
     </div>
   </div>
 </div>
-
-<div class="flow-overlay" id="flowOverlay">
+<div class="overlay" id="flowOverlay">
   <div class="flow-box">
     <h3 id="flowTitle">Processing...</h3>
     <div class="flow-steps" id="flowSteps"></div>
   </div>
 </div>
-<div class="flow-overlay" id="receiptOverlay">
-  <div class="receipt-modal">
-    <div class="r-title">⛽ Shell Station</div>
-    <div class="r-sub">PointSphere Partner — Pump Receipt</div>
+<div class="overlay" id="receiptOverlay">
+  <div class="receipt-box">
+    <div class="rtitle">⛽ Shell Station</div>
+    <div class="rsub">PointSphere Partner Receipt</div>
     <hr/>
-    <div id="receiptLines"></div>
+    <div id="receiptBody"></div>
     <hr/>
-    <div class="r-pts" id="receiptPts"></div>
-    <hr/>
-    <div id="receiptMeta" style="font-size:11px;opacity:0.5;text-align:center;color:#ccc;"></div>
+    <div class="rpts" id="receiptPts"></div>
+    <div class="rmeta" id="receiptMeta"></div>
     <button class="close-btn" onclick="closeReceipt()">New Transaction</button>
   </div>
 </div>
-
 <script>
-const API = "http://127.0.0.1:8000/api";
-const POS_CONFIG = { token:"", conversion_rate:0.1 };
-const FUELS = [
-  {id:1, name:"Super Petrol",   price_per_litre:185, emoji:"🔴", desc:"RON 91"},
-  {id:2, name:"Premium Petrol", price_per_litre:192, emoji:"🟡", desc:"RON 95"},
-  {id:3, name:"Diesel",         price_per_litre:175, emoji:"🟢", desc:"Low Sulphur"},
-  {id:4, name:"Kerosene",       price_per_litre:145, emoji:"🔵", desc:"Household"},
-];
-const SHOP = [
-  {id:101, name:"Engine Oil",  price:850,  emoji:"🛢"},
-  {id:102, name:"Car Wash",    price:400,  emoji:"🚗"},
-  {id:103, name:"Water 1L",    price:50,   emoji:"💧"},
-  {id:104, name:"Snack Bar",   price:80,   emoji:"🍫"},
-  {id:105, name:"Phone Cable", price:350,  emoji:"🔌"},
-  {id:106, name:"Air Freshner",price:220,  emoji:"🌿"},
-];
-let cart=[], currentCustomer=null, selectedFuel=null;
-window.onload = async () => { renderFuels(); renderShop(); startClock(); await loginPartner(); };
-async function loginPartner() {
-  const stored = localStorage.getItem("pos_token_fuel");
-  if (stored) { POS_CONFIG.token = stored; return; }
+const API="http://127.0.0.1:8000/api";
+const STORE="pos_token_fuel";
+const RATE=0.01;
+let POS_TOKEN="";
+let currentCustomer=null;
+window.onload=async()=>{startClock();await loginPartner();};
+async function loginPartner(){
+  POS_TOKEN=localStorage.getItem(STORE)||"";
+  if(POS_TOKEN) return;
   const phone=prompt("Partner phone (9 digits):"); const pin=prompt("Partner PIN:");
-  if (!phone||!pin) return;
+  if(!phone||!pin) return;
   const res=await fetch(`${API}/login/`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,pin,role:"partner"})});
   const data=await res.json();
-  if (data.token) { POS_CONFIG.token=data.token; localStorage.setItem("pos_token_fuel",data.token); }
+  if(data.token){POS_TOKEN=data.token;localStorage.setItem(STORE,data.token);}
   else alert("Login failed: "+(data.error||"Unknown"));
 }
-function startClock() { setInterval(()=>{ document.getElementById("clock").innerText=new Date().toLocaleTimeString(); },1000); }
-function renderFuels() {
-  document.getElementById("fuelGrid").innerHTML = FUELS.map(f=>`
-    <div class="fuel-card" id="fcard${f.id}" onclick="selectFuel(${f.id})">
-      <div class="emoji">${f.emoji}</div>
-      <div class="fname">${f.name}</div>
-      <div class="fprice">KSh ${f.price_per_litre}/L</div>
-      <div class="fdesc">${f.desc}</div>
-    </div>`).join("");
-}
-function renderShop() {
-  document.getElementById("shopGrid").innerHTML = SHOP.map(s=>`
-    <div class="shop-card" onclick="addShopItem(${s.id})">
-      <div class="emoji">${s.emoji}</div>
-      <div class="sname">${s.name}</div>
-      <div class="sprice">KSh ${s.price}</div>
-    </div>`).join("");
-}
-function selectFuel(id) {
-  document.querySelectorAll(".fuel-card").forEach(c=>c.style.borderColor="transparent");
-  document.getElementById(`fcard${id}`).style.borderColor="#cc0000";
-  selectedFuel = FUELS.find(f=>f.id===id);
-  calcFuelAmount();
-}
-function calcFuelAmount() {
-  if (!selectedFuel) return;
-  const litres = parseFloat(document.getElementById("litresInput").value)||0;
-  if (litres > 0) {
-    const amount = litres * selectedFuel.price_per_litre;
-    const existing = cart.find(i=>i.id===selectedFuel.id);
-    if (existing) { existing.price=amount; existing.qty=1; existing.name=`${selectedFuel.name} (${litres}L)`; }
-    else { cart = cart.filter(i=>i.id<100); cart.push({...selectedFuel, price:amount, qty:1, name:`${selectedFuel.name} (${litres}L)`}); }
-    renderCart();
-  }
-}
-function addShopItem(id) {
-  const s = SHOP.find(x=>x.id===id); const ex=cart.find(x=>x.id===id);
-  if (ex) ex.qty++; else cart.push({...s,qty:1}); renderCart();
-}
-function removeFromCart(id) { cart=cart.filter(x=>x.id!==id); renderCart(); }
-function renderCart() {
-  const el=document.getElementById("receiptItems");
-  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const count=cart.reduce((s,i)=>s+i.qty,0);
-  el.innerHTML=cart.length===0?`<div class="receipt-empty">Select fuel or shop items</div>`
-    :cart.map(i=>`<div class="receipt-item"><span class="qty">${i.qty}x</span><span style="flex:1;margin:0 8px;">${i.name}</span><span>KSh ${(i.price*i.qty).toLocaleString()}</span><span class="remove" onclick="removeFromCart(${i.id})">×</span></div>`).join("");
-  document.getElementById("subtotal").innerText=`KSh ${total.toLocaleString()}`;
-  document.getElementById("total").innerText=`KSh ${total.toLocaleString()}`;
-  document.getElementById("itemCount").innerText=count;
-  updatePtsPreview(total);
-}
-function updatePtsPreview(total) {
-  const el=document.getElementById("ptsPreview");
-  if (!currentCustomer) { el.innerText="Lookup a customer to see points preview"; return; }
-  const pts=Math.floor(total*POS_CONFIG.conversion_rate);
-  el.innerHTML=`<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong><br><span style="font-size:11px;opacity:0.7;">Balance: ${currentCustomer.points} pts</span>`;
-}
-function clearAll() { cart=[]; currentCustomer=null; selectedFuel=null; document.getElementById("custPhone").value=""; document.getElementById("custInfo").style.display="none"; document.getElementById("litresInput").value=""; document.querySelectorAll(".fuel-card").forEach(c=>c.style.borderColor="transparent"); renderCart(); }
-async function lookupCustomer() {
-  const phone=document.getElementById("custPhone").value.trim();
-  if (phone.length!==9) return alert("Phone must be 9 digits");
-  try {
-    const res=await fetch(`${API}/pos/customer-lookup/?phone=${phone}`,{headers:{"Authorization":POS_CONFIG.token}});
-    const data=await res.json(); if (!res.ok) throw data;
+function startClock(){setInterval(()=>{document.getElementById("clock").innerText=new Date().toLocaleTimeString();},1000);}
+async function lookupCustomer(){
+  const phone=document.getElementById("phone").value.trim();
+  if(phone.length!==9) return alert("Phone must be 9 digits");
+  try{
+    const res=await fetch(`${API}/pos/customer-lookup/?phone=${phone}`,{headers:{"Authorization":POS_TOKEN}});
+    const data=await res.json(); if(!res.ok) throw data;
     currentCustomer=data;
     document.getElementById("custName").innerText=data.name;
-    document.getElementById("custPoints").innerText=data.points.toLocaleString();
-    document.getElementById("custInfo").style.display="block";
-    updatePtsPreview(cart.reduce((s,i)=>s+i.price*i.qty,0));
-  } catch(err) { alert(err.error||"Customer not found"); }
+    document.getElementById("custPts").innerText=data.points.toLocaleString()+" pts";
+    document.getElementById("custCard").style.display="block";
+    updatePreview();
+  }catch(err){alert(err.error||"Customer not found");}
 }
-const FLOW_STEPS=[
-  {label:"Pump Terminal",      detail:"Preparing transaction data",            icon:"⛽"},
-  {label:"API Request Sent",   detail:"POST /api/pos/earn/ → Backend",         icon:"📡"},
-  {label:"Backend Processing", detail:"Calculating points & updating DB",      icon:"⚙️"},
-  {label:"Database Updated",   detail:"PostgreSQL transaction committed",       icon:"🗄"},
-  {label:"Points Confirmed",   detail:"Customer account updated",              icon:"✅"},
+function updatePreview(){
+  const el=document.getElementById("ptsPreview");
+  const amount=parseFloat(document.getElementById("amount").value)||0;
+  if(!currentCustomer||amount<=0){el.style.display="none";return;}
+  const pts=Math.floor(amount*RATE);
+  el.style.display="block";
+  el.innerHTML=`<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong> on KSh ${amount.toLocaleString()} fuel spend`;
+}
+function resetCustomer(){currentCustomer=null;document.getElementById("custCard").style.display="none";document.getElementById("ptsPreview").style.display="none";}
+function clearAll(){document.getElementById("phone").value="";document.getElementById("amount").value="";document.getElementById("posRef").value="";resetCustomer();}
+const STEPS=[
+  {icon:"⛽",label:"Pump Terminal",     detail:"Sending transaction to loyalty backend"},
+  {icon:"📡",label:"API Request Sent",  detail:"POST /api/pos/earn/ → PointSphere Backend"},
+  {icon:"⚙️",label:"Backend Processing",detail:"Calculating points using partner rate"},
+  {icon:"🗄",label:"Database Updated",  detail:"PostgreSQL — transaction committed"},
+  {icon:"✅",label:"Points Confirmed",  detail:"Customer wallet updated successfully"},
 ];
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function showFlow(title) {
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function showFlow(title){
   document.getElementById("flowTitle").innerText=title;
-  document.getElementById("flowSteps").innerHTML=FLOW_STEPS.map((s,i)=>`
-    <div class="flow-step" id="fstep${i}">
-      <div class="step-icon">${s.icon}</div>
-      <div><div class="step-label">${s.label}</div><div class="step-detail">${s.detail}</div></div>
+  document.getElementById("flowSteps").innerHTML=STEPS.map((s,i)=>`
+    <div class="fstep" id="fs${i}">
+      <div class="icon">${s.icon}</div>
+      <div><div class="label">${s.label}</div><div class="detail">${s.detail}</div></div>
     </div>`).join("");
   document.getElementById("flowOverlay").classList.add("show");
 }
-async function animateFlow(callback) {
-  for (let i=0;i<FLOW_STEPS.length;i++) {
-    const el=document.getElementById(`fstep${i}`); el.classList.add("active");
-    await sleep(i===2?800:500);
-    if (i===2){try{await callback();}catch(e){console.error(e);}}
+async function animateFlow(apiFn){
+  let result=null;
+  for(let i=0;i<STEPS.length;i++){
+    const el=document.getElementById(`fs${i}`); el.classList.add("active");
+    await sleep(i===2?700:450);
+    if(i===2){try{result=await apiFn();}catch(e){console.error(e);}}
     el.classList.remove("active"); el.classList.add("done");
   }
+  return result;
 }
-async function processTransaction(type) {
-  if (cart.length===0) return alert("Add fuel or items first");
-  if (!currentCustomer) return alert("Lookup a customer first");
-  if (!POS_CONFIG.token) return alert("POS not logged in");
-  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const posRef=`SH-${Date.now()}`;
-  let apiResult=null;
-  showFlow(type==="earn"?"Earning Points...":"Redeeming Points...");
-  await animateFlow(async()=>{
-    if (type==="earn") {
-      const res=await fetch(`${API}/pos/earn/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:total,pos_reference:posRef,note:`Shell fuelling — ${cart.map(i=>i.name).join(", ")}`})});
-      apiResult=await res.json(); if (!res.ok) throw apiResult;
-    } else {
-      const pts=parseInt(prompt(`Redeem how many points? (Balance: ${currentCustomer.points})`));
-      if (!pts) throw {error:"Cancelled"};
-      const res=await fetch(`${API}/pos/redeem/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_CONFIG.token},body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:"Shell redemption"})});
-      apiResult=await res.json(); if (!res.ok) throw apiResult;
+async function process(type){
+  if(!currentCustomer) return alert("Lookup a customer first");
+  const amount=parseFloat(document.getElementById("amount").value);
+  if(!amount||amount<=0) return alert("Enter a valid amount");
+  if(!POS_TOKEN) return alert("POS not logged in");
+  const fuelType=document.getElementById("fuelType").value;
+  const posRef=document.getElementById("posRef").value.trim()||`SH-${Date.now()}`;
+  showFlow(type==="earn"?"Awarding Points...":"Redeeming Points...");
+  const result=await animateFlow(async()=>{
+    if(type==="earn"){
+      const res=await fetch(`${API}/pos/earn/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:amount,pos_reference:posRef,note:`Shell fuelling — ${fuelType}`})});
+      const data=await res.json(); if(!res.ok) throw data; return data;
+    }else{
+      const pts=parseInt(prompt(`Redeem how many points?\nCustomer balance: ${currentCustomer.points} pts`));
+      if(!pts||pts<=0) throw {error:"Cancelled"};
+      const res=await fetch(`${API}/pos/redeem/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:`Shell redemption — ${fuelType}`})});
+      const data=await res.json(); if(!res.ok) throw data; return data;
     }
   });
-  await sleep(400);
+  await sleep(300);
   document.getElementById("flowOverlay").classList.remove("show");
-  if (apiResult&&apiResult.success) showReceipt(type,total,apiResult,posRef);
-  else if (apiResult) alert("Error: "+(apiResult.error||"Unknown"));
+  if(result?.success) showReceipt(type,amount,result,posRef,fuelType);
+  else if(result) alert("Error: "+(result.error||"Something went wrong"));
 }
-function showReceipt(type,total,result,posRef) {
-  document.getElementById("receiptLines").innerHTML=cart.map(i=>`<div class="r-row"><span>${i.qty}x ${i.name}</span><span>KSh ${(i.price*i.qty).toLocaleString()}</span></div>`).join("")+`<div class="r-row" style="font-weight:700;margin-top:6px;"><span>TOTAL</span><span>KSh ${total.toLocaleString()}</span></div>`;
+function showReceipt(type,amount,result,posRef,fuelType){
+  document.getElementById("receiptBody").innerHTML=`
+    <div class="rrow"><span>Customer</span><span>${result.customer_name}</span></div>
+    <div class="rrow"><span>Fuel Type</span><span>${fuelType}</span></div>
+    <div class="rrow"><span>Amount Spent</span><span>KSh ${amount.toLocaleString()}</span></div>
+    <div class="rrow"><span>POS Reference</span><span>${posRef}</span></div>`;
   document.getElementById("receiptPts").innerHTML=type==="earn"
-    ?`<div style="font-size:12px;margin-bottom:4px;color:#d97706;">Points Earned</div><div class="pts-val">+${result.points_awarded} pts</div><div style="font-size:11px;margin-top:4px;color:#d97706;">New Balance: ${result.new_balance} pts</div>`
-    :`<div style="font-size:12px;margin-bottom:4px;color:#dc2626;">Points Redeemed</div><div class="pts-val" style="color:#dc2626;">-${result.points_redeemed} pts</div><div style="font-size:11px;margin-top:4px;color:#dc2626;">New Balance: ${result.new_balance} pts</div>`;
-  document.getElementById("receiptMeta").innerHTML=`${result.customer_name} | Ref: ${posRef} | ${new Date().toLocaleString()}`;
+    ?`<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | New Balance: ${result.new_balance} pts</div>`
+    :`<div class="pval" style="color:#dc2626;">-${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
+  document.getElementById("receiptMeta").innerText=`${new Date().toLocaleString()} | PointSphere Loyalty`;
   document.getElementById("receiptOverlay").classList.add("show");
 }
 function closeReceipt(){document.getElementById("receiptOverlay").classList.remove("show");clearAll();}
