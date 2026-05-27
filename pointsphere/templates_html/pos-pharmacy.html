@@ -104,7 +104,7 @@
       </div>
       <div class="field">
         <label>POS Reference (optional)</label>
-        <input id="posRef" placeholder="e.g. RX-00234"/>
+        <input id="posRef" placeholder="e.g. GL-00234"/>
       </div>
       <div class="pts-preview" id="ptsPreview"></div>
       <div class="action-btns">
@@ -123,7 +123,7 @@
 </div>
 <div class="overlay" id="receiptOverlay">
   <div class="receipt-box">
-    <div class="rtitle">💊  Goodlife Pharmacy</div>
+    <div class="rtitle">💊 Goodlife Pharmacy</div>
     <div class="rsub">PointSphere Partner Receipt</div>
     <hr/>
     <div id="receiptBody"></div>
@@ -207,7 +207,7 @@ async function process(type){
   if(!amount||amount<=0) return alert("Enter a valid amount");
   if(!POS_TOKEN) return alert("POS not logged in");
   const category=document.getElementById("category").value;
-  const posRef=document.getElementById("posRef").value.trim()||`MC-${Date.now()}`;
+  const posRef=document.getElementById("posRef").value.trim()||`GL-${Date.now()}`;
   showFlow(type==="earn"?"Awarding Points...":"Redeeming Points...");
   const result=await animateFlow(async()=>{
     if(type==="earn"){

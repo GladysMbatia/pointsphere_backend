@@ -949,3 +949,276 @@ def admin_report(request):
     response = HttpResponse(buffer, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="ps_admin_report.pdf"'
     return response
+
+# ── INVOICE GENERATION ───────────────────
+@csrf_exempt
+@require_http_methods(["GET"])
+def partner_invoice(request):
+    """Generate a PDF invoice for a partner's outstanding liability."""
+    user, err = get_user_from_token(request, ["partner", "admin"])
+    if err:
+        return err
+
+    # Admin can view any partner's invoice via ?partner_id=X
+    if user.role == "admin":
+        partner_id = request.GET.get("partner_id")
+        if not partner_id:
+            return JsonResponse({"error": "partner_id required"}, status=400)
+        try:
+            partner = User.objects.get(id=partner_id, role="partner")
+        except User.DoesNotExist:
+            return JsonResponse({"error": "Partner not found"}, status=404)
+    else:
+        partner = user
+
+    profile = getattr(partner, "partner_profile", None)
+    if not profile:
+        return JsonResponse({"error": "Partner profile not found"}, status=404)
+
+    # Get all unpaid liabilities
+    liabilities = FloatTransaction.objects.filter(
+        partner=partner, transaction_type="liability"
+    ).order_by("-created_at")
+
+    settlements = FloatTransaction.objects.filter(
+        partner=partner, transaction_type="settlement"
+    )
+
+    total_liability  = sum(l.amount for l in liabilities)
+    total_settled    = sum(s.amount for s in settlements)
+    amount_due       = max(total_liability - total_settled, Decimal("0"))
+
+    invoice_number   = f"INV-{partner.id:04d}-{datetime.now().strftime('%Y%m%d')}"
+
+    # Build PDF
+    buffer   = BytesIO()
+    doc      = SimpleDocTemplate(buffer, pagesize=A4,
+                                  leftMargin=20*mm, rightMargin=20*mm,
+                                  topMargin=20*mm, bottomMargin=20*mm)
+    styles   = getSampleStyleSheet()
+    story    = []
+
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+
+    s_title  = ParagraphStyle("t", fontSize=24, fontName="Helvetica-Bold",
+                               textColor=colors.HexColor("#c4622d"), alignment=TA_CENTER, spaceAfter=4)
+    s_sub    = ParagraphStyle("s", fontSize=11, fontName="Helvetica",
+                               textColor=colors.HexColor("#888"), alignment=TA_CENTER, spaceAfter=14)
+    s_head   = ParagraphStyle("h", fontSize=13, fontName="Helvetica-Bold",
+                               textColor=colors.HexColor("#c4622d"), spaceBefore=10, spaceAfter=6)
+    s_body   = ParagraphStyle("b", fontSize=10, fontName="Helvetica",
+                               textColor=colors.HexColor("#333"), spaceAfter=4)
+    s_right  = ParagraphStyle("r", fontSize=10, fontName="Helvetica",
+                               textColor=colors.HexColor("#333"), alignment=TA_RIGHT, spaceAfter=4)
+    s_due    = ParagraphStyle("d", fontSize=16, fontName="Helvetica-Bold",
+                               textColor=colors.HexColor("#c4622d"), alignment=TA_RIGHT, spaceAfter=4)
+
+    # Header
+    story.append(Paragraph("PointSphere", s_title))
+    story.append(Paragraph("Loyalty Management Platform", s_sub))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#c4622d")))
+    story.append(Spacer(1, 6*mm))
+
+    # Invoice meta
+    meta_rows = [
+        ["Invoice Number:", invoice_number],
+        ["Date Issued:",    datetime.now().strftime("%d %b %Y")],
+        ["Due Date:",       "Immediate"],
+        ["Status:",         "OUTSTANDING" if amount_due > 0 else "SETTLED"],
+    ]
+    meta_table = Table(meta_rows, colWidths=[60*mm, 100*mm])
+    meta_table.setStyle(TableStyle([
+        ("FONTNAME",    (0,0), (0,-1), "Helvetica-Bold"),
+        ("FONTNAME",    (1,0), (1,-1), "Helvetica"),
+        ("FONTSIZE",    (0,0), (-1,-1), 10),
+        ("TEXTCOLOR",   (0,0), (0,-1), colors.HexColor("#333")),
+        ("TEXTCOLOR",   (1,0), (1,-1), colors.HexColor("#555")),
+        ("TOPPADDING",  (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING",(0,0),(-1,-1), 4),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 6*mm))
+
+    # Partner details
+    story.append(Paragraph("Billed To", s_head))
+    story.append(Paragraph(f"<b>{profile.business_name or partner.name}</b>", s_body))
+    story.append(Paragraph(f"Phone: {partner.phone}", s_body))
+    story.append(Paragraph(f"Partner Since: {partner.created_at.strftime('%d %b %Y')}", s_body))
+    story.append(Spacer(1, 6*mm))
+
+    # Liability entries
+    story.append(Paragraph("Outstanding Liability Details", s_head))
+
+    liab_rows = [["Date", "Description", "POS Reference", "Amount (KSh)"]]
+    for l in liabilities:
+        liab_rows.append([
+            l.created_at.strftime("%d %b %Y %H:%M"),
+            l.note or "Float shortfall — central pool coverage",
+            l.reference or "—",
+            f"KSh {float(l.amount):,.2f}",
+        ])
+    if len(liab_rows) == 1:
+        liab_rows.append(["—", "No liabilities recorded", "—", "KSh 0.00"])
+
+    col_w = (A4[0] - 40*mm) / 4
+    liab_table = Table(liab_rows, colWidths=[col_w]*4, repeatRows=1)
+    liab_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#c4622d")),
+        ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+        ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE",      (0,0), (-1,0), 10),
+        ("ALIGN",         (0,0), (-1,0), "CENTER"),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,1), (-1,-1), 9),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.HexColor("#fff8f4"), colors.white]),
+        ("GRID",          (0,0), (-1,-1), 0.4, colors.HexColor("#ddd")),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING",    (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("ALIGN",         (3,1), (3,-1), "RIGHT"),
+    ]))
+    story.append(liab_table)
+    story.append(Spacer(1, 4*mm))
+
+    # Settlement entries
+    if settlements.exists():
+        story.append(Paragraph("Settlements Received", s_head))
+        sett_rows = [["Date", "Reference", "Note", "Amount (KSh)"]]
+        for s in settlements:
+            sett_rows.append([
+                s.created_at.strftime("%d %b %Y"),
+                s.reference or "—",
+                s.note or "Settlement",
+                f"KSh {float(s.amount):,.2f}",
+            ])
+        sett_table = Table(sett_rows, colWidths=[col_w]*4, repeatRows=1)
+        sett_table.setStyle(TableStyle([
+            ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#16a34a")),
+            ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+            ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE",      (0,0), (-1,-1), 9),
+            ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.HexColor("#f0fdf4"), colors.white]),
+            ("GRID",          (0,0), (-1,-1), 0.4, colors.HexColor("#ddd")),
+            ("TOPPADDING",    (0,0), (-1,-1), 5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+            ("ALIGN",         (3,1), (3,-1), "RIGHT"),
+        ]))
+        story.append(sett_table)
+        story.append(Spacer(1, 4*mm))
+
+    # Totals
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#ddd")))
+    story.append(Spacer(1, 4*mm))
+    totals = [
+        ["Total Liabilities:", f"KSh {float(total_liability):,.2f}"],
+        ["Total Settled:",     f"KSh {float(total_settled):,.2f}"],
+    ]
+    totals_table = Table(totals, colWidths=[120*mm, 50*mm])
+    totals_table.setStyle(TableStyle([
+        ("FONTNAME",     (0,0), (-1,-1), "Helvetica"),
+        ("FONTSIZE",     (0,0), (-1,-1), 10),
+        ("ALIGN",        (1,0), (1,-1), "RIGHT"),
+        ("TOPPADDING",   (0,0), (-1,-1), 3),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 3),
+        ("TEXTCOLOR",    (0,0), (-1,-1), colors.HexColor("#555")),
+    ]))
+    story.append(totals_table)
+    story.append(Spacer(1, 2*mm))
+
+    due_table = Table([["AMOUNT DUE:", f"KSh {float(amount_due):,.2f}"]], colWidths=[120*mm, 50*mm])
+    due_table.setStyle(TableStyle([
+        ("FONTNAME",     (0,0), (-1,-1), "Helvetica-Bold"),
+        ("FONTSIZE",     (0,0), (-1,-1), 14),
+        ("ALIGN",        (1,0), (1,-1), "RIGHT"),
+        ("TEXTCOLOR",    (0,0), (-1,-1), colors.HexColor("#c4622d")),
+        ("TOPPADDING",   (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 6),
+    ]))
+    story.append(due_table)
+    story.append(Spacer(1, 8*mm))
+
+    # Footer
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#c4622d")))
+    story.append(Spacer(1, 3*mm))
+    story.append(Paragraph(
+        "Please contact PointSphere administration to arrange float settlement. "
+        "Continued operations require float balance above the minimum threshold.",
+        ParagraphStyle("footer", fontSize=9, fontName="Helvetica",
+                       textColor=colors.HexColor("#888"), alignment=TA_CENTER)
+    ))
+
+    doc.build(story)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="invoice_{invoice_number}.pdf"'
+    return response
+
+
+# ── PARTNER ANALYTICS ────────────────────
+@csrf_exempt
+@require_http_methods(["GET"])
+def partner_analytics(request):
+    """Returns time-series data for partner performance charts."""
+    user, err = get_user_from_token(request, "partner")
+    if err:
+        return err
+
+    from django.db.models import Sum, Count
+    from django.db.models.functions import TruncDate
+    import json as _json
+
+    # Last 30 days of transactions
+    from datetime import timedelta
+    from django.utils.timezone import now
+
+    thirty_days_ago = now() - timedelta(days=30)
+
+    daily_earn = (
+        Transaction.objects
+        .filter(partner=user, transaction_type="earn", created_at__gte=thirty_days_ago)
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(total_points=Sum("points"), count=Count("id"))
+        .order_by("day")
+    )
+
+    daily_redeem = (
+        Transaction.objects
+        .filter(partner=user, transaction_type="redeem", created_at__gte=thirty_days_ago)
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(total_points=Sum("points"), count=Count("id"))
+        .order_by("day")
+    )
+
+    float_history = (
+        FloatTransaction.objects
+        .filter(partner=user, created_at__gte=thirty_days_ago)
+        .order_by("created_at")
+        .values("created_at", "transaction_type", "amount", "balance_after")
+    )
+
+    return JsonResponse({
+        "daily_earn": [
+            {"day": str(r["day"]), "points": r["total_points"], "count": r["count"]}
+            for r in daily_earn
+        ],
+        "daily_redeem": [
+            {"day": str(r["day"]), "points": r["total_points"], "count": r["count"]}
+            for r in daily_redeem
+        ],
+        "float_trend": [
+            {
+                "date": r["created_at"].strftime("%d %b"),
+                "type": r["transaction_type"],
+                "balance_after": float(r["balance_after"]),
+            }
+            for r in float_history
+        ],
+        "summary": {
+            "total_earn_30d":   sum(r["total_points"] for r in daily_earn),
+            "total_redeem_30d": sum(r["total_points"] for r in daily_redeem),
+            "txn_count_30d":    sum(r["count"] for r in daily_earn) + sum(r["count"] for r in daily_redeem),
+        }
+    })

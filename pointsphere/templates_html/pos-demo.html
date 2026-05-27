@@ -22,7 +22,7 @@
     .pos-card .name{font-size:18px;font-weight:700;margin-bottom:6px}
     .pos-card .desc{font-size:12px;opacity:0.7;line-height:1.5;margin-bottom:14px}
     .pos-card .tag{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.15);display:inline-block}
-    .supermarket{background:linear-gradient(135deg,#0057a8,#1a7fd4)}
+    .naivas{background:linear-gradient(135deg,#a31020,#e31837)}
     .restaurant{background:linear-gradient(135deg,#7b3f00,#a0522d)}
     .fuel{background:linear-gradient(135deg,#7a0000,#cc0000)}
     .pharmacy{background:linear-gradient(135deg,#004d40,#00897b)}
@@ -38,7 +38,7 @@
   </div>
 
   <h1>Mock POS Demo Centre</h1>
-  <p class="subtitle">Each terminal below simulates a real partner POS system. All transactions go through the shared PointSphere loyalty backend and update the same PostgreSQL database.</p>
+  <p class="subtitle">Each terminal simulates a real partner POS system. All transactions go through the shared PointSphere loyalty backend and update the same PostgreSQL database in real time.</p>
 
   <div class="arch">
     POS Terminal &nbsp;→&nbsp; POST /api/pos/earn/ &nbsp;→&nbsp; Django Backend &nbsp;→&nbsp; PostgreSQL<br>
@@ -46,36 +46,36 @@
   </div>
 
   <div class="grid">
-    <a href="pos-supermarket.html" class="pos-card supermarket">
+    <a href="pos-supermarket.html" class="pos-card naivas">
       <div class="icon">🛒</div>
       <div class="name">Naivas Supermarket</div>
-      <div class="desc">Full grocery POS with 16 products across 5 categories. Customers earn points on every purchase.</div>
-      <span class="tag">16 products</span>
+      <div class="desc">Supermarket POS with supplier product catalogue from Unilever, Nestlé and Coca-Cola. Customers earn points on every purchase.</div>
+      <span class="tag">Unilever · Nestlé · Coca-Cola</span>
     </a>
     <a href="pos-restaurant.html" class="pos-card restaurant">
       <div class="icon">☕</div>
       <div class="name">Java House Café</div>
-      <div class="desc">Restaurant & café order terminal with full menu including coffee, food, drinks and desserts.</div>
-      <span class="tag">14 menu items</span>
+      <div class="desc">Restaurant & café order terminal. Enter order amount and award points after every meal or drink purchase.</div>
+      <span class="tag">Food & Beverage</span>
     </a>
     <a href="pos-fuel.html" class="pos-card fuel">
       <div class="icon">⛽</div>
       <div class="name">Shell Fuel Station</div>
-      <div class="desc">Pump terminal with fuel type selection, litre input and shop items. Points on fuel and shop.</div>
-      <span class="tag">4 fuel types + shop</span>
+      <div class="desc">Pump terminal with fuel type selection. Points earned on fuel spend and shop purchases at the station.</div>
+      <span class="tag">Fuel · Shop</span>
     </a>
     <a href="pos-pharmacy.html" class="pos-card pharmacy">
       <div class="icon">💊</div>
       <div class="name">Goodlife Pharmacy</div>
-      <div class="desc">Dispensing counter with OTC meds, antibiotics, vitamins, hygiene and baby products.</div>
-      <span class="tag">15 products</span>
+      <div class="desc">Dispensing counter for OTC meds, prescription items, vitamins, baby products and personal care.</div>
+      <span class="tag">Pharmacy · Healthcare</span>
     </a>
   </div>
 
   <p class="note">
     Each POS logs in with its own partner credentials.<br>
-    Tokens are saved in localStorage per terminal so you don't re-login every time.<br>
-    All transactions appear in the Admin dashboard and Partner dashboard in real time.
+    Tokens are saved in localStorage per terminal — login once per browser session.<br>
+    All transactions appear in the Admin and Partner dashboards in real time.
   </p>
 
   <a href="index.html" class="back">← Back to PointSphere Login</a>

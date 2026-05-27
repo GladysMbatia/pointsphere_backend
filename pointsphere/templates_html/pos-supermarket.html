@@ -3,57 +3,72 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Naivas POS – PointSphere</title>
+  <title>Naivas Supermarket POS – PointSphere</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--brand:#0057a8;--bg:#f0f4f8;--dark:#1a1a2e;--green:#16a34a;--gold:#d97706;--red:#dc2626}
+    :root{--brand:#e31837;--brand-d:#b0102a;--bg:#f5f5f5;--dark:#1a1a1a;--green:#16a34a;--gold:#d97706;--red:#dc2626}
     body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;display:flex;flex-direction:column}
-    .header{background:var(--brand);color:#fff;padding:14px 28px;display:flex;justify-content:space-between;align-items:center}
-    .header .brand{font-size:20px;font-weight:700}
-    .header .sub{font-size:12px;opacity:0.7;margin-top:2px}
+    .header{background:var(--brand);color:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
+    .header .brand{font-size:20px;font-weight:700;letter-spacing:0.5px}
+    .header .sub{font-size:12px;opacity:0.8;margin-top:2px}
     .header .time{font-family:"DM Mono";font-size:15px}
-    .body{flex:1;display:flex;align-items:center;justify-content:center;padding:32px}
-    .terminal{background:#fff;border-radius:20px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.1);overflow:hidden}
-    .terminal-header{background:var(--brand);color:#fff;padding:20px 24px}
-    .terminal-header h2{font-size:18px;font-weight:700}
-    .terminal-header p{font-size:12px;opacity:0.7;margin-top:3px}
-    .terminal-body{padding:24px}
-    .field{margin-bottom:16px}
+    .body{flex:1;display:flex;flex-direction:column;padding:20px;gap:20px;max-width:900px;margin:0 auto;width:100%}
+
+    /* SUPPLIER SECTION */
+    .supplier-section{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+    .supplier-section h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .supplier-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    .sup-tab{padding:7px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s}
+    .sup-tab.active{color:#fff;border-color:transparent}
+    .sup-tab.unilever.active{background:#003087}
+    .sup-tab.nestle.active{background:#c8102e}
+    .sup-tab.cocacola.active{background:#f40009}
+    .products-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .product-card{border-radius:10px;padding:12px;border:2px solid #f0f0f0;background:#fafafa;transition:all 0.15s}
+    .product-card .supplier-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px;display:inline-block}
+    .unilever-tag{background:#e8eef8;color:#003087}
+    .nestle-tag{background:#fce8ea;color:#c8102e}
+    .cocacola-tag{background:#fff0f0;color:#f40009}
+    .product-card .pname{font-size:12px;font-weight:600;margin-bottom:3px}
+    .product-card .pprice{font-size:13px;font-weight:700;color:var(--brand)}
+    .product-card .ppack{font-size:11px;opacity:0.5;margin-top:2px}
+
+    /* TRANSACTION SECTION */
+    .transaction-section{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+    .transaction-section h2{font-size:15px;font-weight:700;margin-bottom:14px}
+    .field{margin-bottom:14px}
     .field label{display:block;font-size:12px;font-weight:600;opacity:0.5;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
-    .field input{width:100%;padding:13px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:16px;font-family:"DM Mono";outline:none;transition:border 0.2s}
+    .field input{width:100%;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:"DM Mono";outline:none;transition:border 0.2s}
     .field input:focus{border-color:var(--brand)}
     .lookup-row{display:flex;gap:8px}
     .lookup-row input{flex:1}
-    .lookup-btn{padding:13px 18px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
-    .customer-card{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:none}
-    .customer-card .cname{font-weight:700;font-size:15px;color:var(--brand)}
-    .customer-card .cpts{font-size:13px;color:var(--gold);margin-top:3px}
-    .pts-preview{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--gold);margin-bottom:16px;text-align:center;display:none}
+    .lookup-btn{padding:12px 16px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px}
+    .customer-card{background:#fff5f5;border:1.5px solid #fcc;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none}
+    .customer-card .cname{font-weight:700;font-size:14px;color:var(--brand)}
+    .customer-card .cpts{font-size:13px;color:var(--gold);margin-top:2px}
+    .pts-preview{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:14px;text-align:center;display:none}
     .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .btn{padding:14px;border:none;border-radius:12px;cursor:pointer;font-weight:700;font-size:15px;transition:opacity 0.15s}
-    .btn:hover{opacity:0.88}
+    .btn{padding:13px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px}
     .btn-earn{background:var(--green);color:#fff}
     .btn-redeem{background:var(--gold);color:#fff}
-    .btn-clear{background:#f0f4f8;color:#666;font-size:13px;grid-column:span 2;padding:10px}
+    .btn-clear{background:#f5f5f5;color:#666;font-size:12px;grid-column:span 2;padding:9px}
 
-    /* FLOW */
+    /* FLOW + RECEIPT */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:50}
     .overlay.show{display:flex}
-    .flow-box{background:#fff;border-radius:20px;padding:32px;width:400px}
-    .flow-box h3{font-size:17px;font-weight:700;margin-bottom:20px;text-align:center}
+    .flow-box{background:#fff;border-radius:20px;padding:28px;width:400px}
+    .flow-box h3{font-size:17px;font-weight:700;margin-bottom:18px;text-align:center}
     .flow-steps{display:flex;flex-direction:column;gap:10px}
-    .fstep{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:#f8fafc;transition:all 0.3s}
-    .fstep.active{background:#eff6ff;border:1.5px solid var(--brand)}
+    .fstep{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:#f8f8f8;transition:all 0.3s}
+    .fstep.active{background:#fff0f0;border:1.5px solid var(--brand)}
     .fstep.done{background:#f0fdf4;border:1.5px solid var(--green)}
-    .fstep .icon{font-size:18px;width:32px;text-align:center}
+    .fstep .icon{font-size:18px;width:30px;text-align:center}
     .fstep.active .icon{animation:pulse 0.8s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
     .fstep .label{font-size:13px;font-weight:600}
     .fstep .detail{font-size:11px;opacity:0.5}
-
-    /* RECEIPT */
-    .receipt-box{background:#fff;border-radius:20px;padding:28px;width:360px;font-family:"DM Mono",monospace}
+    .receipt-box{background:#fff;border-radius:20px;padding:26px;width:360px;font-family:"DM Mono",monospace}
     .receipt-box .rtitle{text-align:center;font-size:17px;font-weight:700;margin-bottom:3px}
     .receipt-box .rsub{text-align:center;font-size:11px;opacity:0.4;margin-bottom:14px}
     .receipt-box hr{border:none;border-top:1px dashed #ddd;margin:10px 0}
@@ -62,56 +77,59 @@
     .rpts .pval{font-size:28px;font-weight:700;color:var(--gold)}
     .rpts .psub{font-size:12px;opacity:0.6;margin-top:4px}
     .rmeta{text-align:center;font-size:10px;opacity:0.4;margin-top:6px}
-    .close-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:16px;font-family:"DM Sans",sans-serif}
+    .close-btn{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:14px;font-family:"DM Sans",sans-serif}
   </style>
 </head>
 <body>
 <div class="header">
   <div>
     <div class="brand">🛒 Naivas Supermarket</div>
-    <div class="sub">PointSphere Partner Terminal</div>
+    <div class="sub">PointSphere Partner POS — Cashier Terminal</div>
   </div>
   <div class="time" id="clock">--:--:--</div>
 </div>
 
 <div class="body">
-  <div class="terminal">
-    <div class="terminal-header">
-      <h2>New Transaction</h2>
-      <p>Enter customer phone and transaction amount</p>
+
+  <!-- SUPPLIER PRODUCT LISTINGS -->
+  <div class="supplier-section">
+    <h2>📦 Supplier Product Catalogue</h2>
+    <div class="supplier-tabs">
+      <div class="sup-tab unilever active" onclick="filterSupplier('all',this)">All Suppliers</div>
+      <div class="sup-tab unilever" onclick="filterSupplier('unilever',this)">🔵 Unilever</div>
+      <div class="sup-tab nestle" onclick="filterSupplier('nestle',this)">🔴 Nestlé</div>
+      <div class="sup-tab cocacola" onclick="filterSupplier('cocacola',this)">🟥 Coca-Cola</div>
     </div>
-    <div class="terminal-body">
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
 
-      <div class="field">
-        <label>Customer Phone</label>
-        <div class="lookup-row">
-          <input id="phone" type="tel" placeholder="7XXXXXXXX" maxlength="9" oninput="resetCustomer()"/>
-          <button class="lookup-btn" onclick="lookupCustomer()">Lookup</button>
-        </div>
+  <!-- TRANSACTION FORM -->
+  <div class="transaction-section">
+    <h2>💳 New Transaction</h2>
+    <div class="field">
+      <label>Customer Phone</label>
+      <div class="lookup-row">
+        <input id="phone" type="tel" placeholder="7XXXXXXXX" maxlength="9" oninput="resetCustomer()"/>
+        <button class="lookup-btn" onclick="lookupCustomer()">Lookup</button>
       </div>
-
-      <div class="customer-card" id="custCard">
-        <div class="cname" id="custName">—</div>
-        <div class="cpts" id="custPts">— pts</div>
-      </div>
-
-      <div class="field">
-        <label>Amount Spent (KSh)</label>
-        <input id="amount" type="number" placeholder="e.g. 1500" min="1" oninput="updatePreview()"/>
-      </div>
-
-      <div class="field">
-        <label>POS Reference (optional)</label>
-        <input id="posRef" placeholder="e.g. TXN-00123"/>
-      </div>
-
-      <div class="pts-preview" id="ptsPreview"></div>
-
-      <div class="action-btns">
-        <button class="btn btn-earn" onclick="process('earn')">✓ Earn Points</button>
-        <button class="btn btn-redeem" onclick="process('redeem')">★ Redeem Points</button>
-        <button class="btn btn-clear" onclick="clearAll()">✕ Clear</button>
-      </div>
+    </div>
+    <div class="customer-card" id="custCard">
+      <div class="cname" id="custName">—</div>
+      <div class="cpts" id="custPts">— pts</div>
+    </div>
+    <div class="field">
+      <label>Total Amount Spent (KSh)</label>
+      <input id="amount" type="number" placeholder="e.g. 2500" min="1" oninput="updatePreview()"/>
+    </div>
+    <div class="field">
+      <label>POS Reference (optional)</label>
+      <input id="posRef" placeholder="e.g. NVS-00123"/>
+    </div>
+    <div class="pts-preview" id="ptsPreview"></div>
+    <div class="action-btns">
+      <button class="btn btn-earn" onclick="process('earn')">✓ Earn Points</button>
+      <button class="btn btn-redeem" onclick="process('redeem')">★ Redeem Points</button>
+      <button class="btn btn-clear" onclick="clearAll()">✕ Clear</button>
     </div>
   </div>
 </div>
@@ -127,7 +145,7 @@
 <!-- RECEIPT OVERLAY -->
 <div class="overlay" id="receiptOverlay">
   <div class="receipt-box">
-    <div class="rtitle">🛒 Naivas</div>
+    <div class="rtitle">🛒 Naivas Supermarket</div>
     <div class="rsub">PointSphere Partner Receipt</div>
     <hr/>
     <div id="receiptBody"></div>
@@ -139,19 +157,73 @@
 </div>
 
 <script>
-const API = "http://127.0.0.1:8000/api";
+const API   = "http://127.0.0.1:8000/api";
 const STORE = "pos_token_supermarket";
-const RATE  = 0.1; // fallback, overridden by backend
+const RATE  = 0.01;
 let POS_TOKEN = "";
 let currentCustomer = null;
 
-window.onload = async () => { startClock(); await loginPartner(); };
+const PRODUCTS = [
+  // Unilever
+  {supplier:"unilever", name:"Omo Detergent 1kg",      price:320,  pack:"1kg pack"},
+  {supplier:"unilever", name:"Sunlight Dish Soap",     price:85,   pack:"500ml"},
+  {supplier:"unilever", name:"Lifebuoy Soap",          price:55,   pack:"100g bar"},
+  {supplier:"unilever", name:"Dove Body Wash",         price:480,  pack:"250ml"},
+  {supplier:"unilever", name:"Vaseline Lotion",        price:220,  pack:"200ml"},
+  {supplier:"unilever", name:"Close-Up Toothpaste",    price:120,  pack:"75ml"},
+  {supplier:"unilever", name:"Rexona Deodorant",       price:180,  pack:"150ml"},
+  {supplier:"unilever", name:"Knorr Chicken Stock",    price:45,   pack:"4 cubes"},
+  // Nestlé
+  {supplier:"nestle",   name:"Milo 400g",              price:380,  pack:"400g tin"},
+  {supplier:"nestle",   name:"Nescafé Classic",        price:320,  pack:"100g jar"},
+  {supplier:"nestle",   name:"Maggi Noodles",          price:35,   pack:"70g pack"},
+  {supplier:"nestle",   name:"Kit Kat 4-finger",       price:80,   pack:"41.5g"},
+  {supplier:"nestle",   name:"Nestlé Corn Flakes",     price:280,  pack:"375g"},
+  {supplier:"nestle",   name:"Nestlé Pure Life Water", price:50,   pack:"500ml"},
+  {supplier:"nestle",   name:"Milkmaid Condensed",     price:120,  pack:"397g tin"},
+  {supplier:"nestle",   name:"Nescafé 3-in-1",         price:25,   pack:"per sachet"},
+  // Coca-Cola
+  {supplier:"cocacola", name:"Coca-Cola 500ml",        price:60,   pack:"500ml bottle"},
+  {supplier:"cocacola", name:"Sprite 500ml",           price:60,   pack:"500ml bottle"},
+  {supplier:"cocacola", name:"Fanta Orange 500ml",     price:60,   pack:"500ml bottle"},
+  {supplier:"cocacola", name:"Minute Maid Juice",      price:80,   pack:"300ml"},
+  {supplier:"cocacola", name:"Dasani Water 500ml",     price:50,   pack:"500ml"},
+  {supplier:"cocacola", name:"Schweppes Tonic",        price:80,   pack:"300ml"},
+  {supplier:"cocacola", name:"Coke 2L",                price:160,  pack:"2L bottle"},
+  {supplier:"cocacola", name:"Bonaqua Water 1.5L",     price:90,   pack:"1.5L"},
+];
+
+const TAG = { unilever:"unilever-tag", nestle:"nestle-tag", cocacola:"cocacola-tag" };
+const LABEL = { unilever:"Unilever", nestle:"Nestlé", cocacola:"Coca-Cola" };
+
+function renderProducts(supplier) {
+  const list = supplier === "all" ? PRODUCTS : PRODUCTS.filter(p => p.supplier === supplier);
+  document.getElementById("productsGrid").innerHTML = list.map(p => `
+    <div class="product-card">
+      <div class="supplier-tag ${TAG[p.supplier]}">${LABEL[p.supplier]}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pprice">KSh ${p.price}</div>
+      <div class="ppack">${p.pack}</div>
+    </div>`).join("");
+}
+
+function filterSupplier(sup, el) {
+  document.querySelectorAll(".sup-tab").forEach(t => {
+    t.classList.remove("active");
+    t.style.background = "";
+    t.style.color = "";
+    t.style.borderColor = "";
+  });
+  el.classList.add("active");
+  renderProducts(sup);
+}
+
+window.onload = async () => { renderProducts("all"); startClock(); await loginPartner(); };
 
 async function loginPartner() {
   POS_TOKEN = localStorage.getItem(STORE) || "";
   if (POS_TOKEN) return;
-  const phone = prompt("Partner phone (9 digits):"); 
-  const pin   = prompt("Partner PIN:");
+  const phone = prompt("Partner phone (9 digits):"); const pin = prompt("Partner PIN:");
   if (!phone || !pin) return;
   const res  = await fetch(`${API}/login/`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({phone,pin,role:"partner"}) });
   const data = await res.json();
@@ -159,7 +231,7 @@ async function loginPartner() {
   else alert("Login failed: " + (data.error || "Unknown"));
 }
 
-function startClock() { setInterval(()=>{ document.getElementById("clock").innerText=new Date().toLocaleTimeString(); },1000); }
+function startClock() { setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString(); }, 1000); }
 
 async function lookupCustomer() {
   const phone = document.getElementById("phone").value.trim();
@@ -178,33 +250,33 @@ async function lookupCustomer() {
 function updatePreview() {
   const el     = document.getElementById("ptsPreview");
   const amount = parseFloat(document.getElementById("amount").value) || 0;
-  if (!currentCustomer || amount <= 0) { el.style.display="none"; return; }
+  if (!currentCustomer || amount <= 0) { el.style.display = "none"; return; }
   const pts = Math.floor(amount * RATE);
   el.style.display = "block";
   el.innerHTML = `<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong> on KSh ${amount.toLocaleString()} spend`;
 }
 
-function resetCustomer() { currentCustomer=null; document.getElementById("custCard").style.display="none"; document.getElementById("ptsPreview").style.display="none"; }
+function resetCustomer() { currentCustomer = null; document.getElementById("custCard").style.display = "none"; document.getElementById("ptsPreview").style.display = "none"; }
 
 function clearAll() {
-  document.getElementById("phone").value="";
-  document.getElementById("amount").value="";
-  document.getElementById("posRef").value="";
+  document.getElementById("phone").value  = "";
+  document.getElementById("amount").value = "";
+  document.getElementById("posRef").value = "";
   resetCustomer();
 }
 
 const STEPS = [
-  {icon:"🖥", label:"POS Terminal",      detail:"Sending transaction to loyalty backend"},
-  {icon:"📡", label:"API Request Sent",  detail:"POST /api/pos/earn/ → PointSphere Backend"},
-  {icon:"⚙️", label:"Backend Processing",detail:"Calculating points using partner rate"},
-  {icon:"🗄", label:"Database Updated",  detail:"PostgreSQL — transaction committed"},
-  {icon:"✅", label:"Points Confirmed",  detail:"Customer wallet updated successfully"},
+  {icon:"🖥", label:"POS Terminal",       detail:"Sending transaction to loyalty backend"},
+  {icon:"📡", label:"API Request Sent",   detail:"POST /api/pos/earn/ → PointSphere Backend"},
+  {icon:"⚙️", label:"Backend Processing", detail:"Calculating points using partner rate"},
+  {icon:"🗄", label:"Database Updated",   detail:"PostgreSQL — transaction committed"},
+  {icon:"✅", label:"Points Confirmed",   detail:"Customer wallet updated successfully"},
 ];
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function showFlow(title) {
   document.getElementById("flowTitle").innerText = title;
-  document.getElementById("flowSteps").innerHTML = STEPS.map((s,i)=>`
+  document.getElementById("flowSteps").innerHTML = STEPS.map((s,i) => `
     <div class="fstep" id="fs${i}">
       <div class="icon">${s.icon}</div>
       <div><div class="label">${s.label}</div><div class="detail">${s.detail}</div></div>
@@ -214,47 +286,37 @@ function showFlow(title) {
 
 async function animateFlow(apiFn) {
   let result = null;
-  for (let i=0; i<STEPS.length; i++) {
-    const el = document.getElementById(`fs${i}`);
-    el.classList.add("active");
-    await sleep(i===2 ? 700 : 450);
-    if (i===2) { try { result = await apiFn(); } catch(e) { console.error(e); } }
+  for (let i = 0; i < STEPS.length; i++) {
+    const el = document.getElementById(`fs${i}`); el.classList.add("active");
+    await sleep(i === 2 ? 700 : 450);
+    if (i === 2) { try { result = await apiFn(); } catch(e) { console.error(e); } }
     el.classList.remove("active"); el.classList.add("done");
   }
   return result;
 }
 
 async function process(type) {
-  if (!currentCustomer)                                   return alert("Lookup a customer first");
+  if (!currentCustomer) return alert("Lookup a customer first");
   const amount = parseFloat(document.getElementById("amount").value);
-  if (!amount || amount <= 0)                             return alert("Enter a valid amount");
-  if (!POS_TOKEN)                                         return alert("POS not logged in");
-
-  const posRef = document.getElementById("posRef").value.trim() || `SM-${Date.now()}`;
-  showFlow(type==="earn" ? "Awarding Points..." : "Redeeming Points...");
-
+  if (!amount || amount <= 0) return alert("Enter a valid amount");
+  if (!POS_TOKEN) return alert("POS not logged in");
+  const posRef = document.getElementById("posRef").value.trim() || `NVS-${Date.now()}`;
+  showFlow(type === "earn" ? "Awarding Points..." : "Redeeming Points...");
   const result = await animateFlow(async () => {
-    if (type==="earn") {
-      const res = await fetch(`${API}/pos/earn/`, {
-        method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
-        body:JSON.stringify({ phone:currentCustomer.phone, amount_ksh:amount, pos_reference:posRef, note:"Naivas purchase" })
-      });
+    if (type === "earn") {
+      const res  = await fetch(`${API}/pos/earn/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:amount,pos_reference:posRef,note:"Naivas purchase"}) });
       const data = await res.json(); if (!res.ok) throw data; return data;
     } else {
       const pts = parseInt(prompt(`Redeem how many points?\nCustomer balance: ${currentCustomer.points} pts`));
       if (!pts || pts <= 0) throw {error:"Cancelled"};
-      const res = await fetch(`${API}/pos/redeem/`, {
-        method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
-        body:JSON.stringify({ phone:currentCustomer.phone, points:pts, pos_reference:posRef, note:"Naivas redemption" })
-      });
+      const res  = await fetch(`${API}/pos/redeem/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:"Naivas redemption"}) });
       const data = await res.json(); if (!res.ok) throw data; return data;
     }
   });
-
   await sleep(300);
   document.getElementById("flowOverlay").classList.remove("show");
   if (result?.success) showReceipt(type, amount, result, posRef);
-  else if (result)     alert("Error: " + (result.error || "Something went wrong"));
+  else if (result) alert("Error: " + (result.error || "Something went wrong"));
 }
 
 function showReceipt(type, amount, result, posRef) {
@@ -262,11 +324,9 @@ function showReceipt(type, amount, result, posRef) {
     <div class="rrow"><span>Customer</span><span>${result.customer_name}</span></div>
     <div class="rrow"><span>Amount Spent</span><span>KSh ${amount.toLocaleString()}</span></div>
     <div class="rrow"><span>POS Reference</span><span>${posRef}</span></div>`;
-
-  document.getElementById("receiptPts").innerHTML = type==="earn"
+  document.getElementById("receiptPts").innerHTML = type === "earn"
     ? `<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | New Balance: ${result.new_balance} pts</div>`
     : `<div class="pval" style="color:#dc2626;">-${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
-
   document.getElementById("receiptMeta").innerText = `${new Date().toLocaleString()} | PointSphere Loyalty`;
   document.getElementById("receiptOverlay").classList.add("show");
 }

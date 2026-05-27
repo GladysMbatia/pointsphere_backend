@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PointSphere – Partner Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"DM Sans",sans-serif;background:#0f1a12;color:#faf6ef;min-height:100vh}
@@ -17,11 +18,13 @@
     .nav-item:hover{background:#1c2a15;color:#fff}
     .nav-item.active{border-left:3px solid #7ecc4a;background:#1c2a15;color:#fff}
     .main{padding:20px;overflow:auto}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
     .title{font-family:"Playfair Display";font-size:20px}
     .btn{padding:8px 14px;border-radius:8px;border:1px solid #4a9a30;background:transparent;color:#fff;cursor:pointer;font-size:13px}
     .btn.primary{background:#4a9a30;border:none}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}
+    .btn.invoice{background:#c4622d;border:none}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
     .card{background:#162010;padding:15px;border-radius:12px;border:1px solid rgba(74,154,48,0.2)}
     .big{font-size:22px;font-family:"Playfair Display";margin-top:6px}
     .page{display:none}.page.active{display:block}
@@ -30,6 +33,14 @@
     th{opacity:0.5}
     .earn{color:#7ecc4a}.redeem{color:#e8845a}
     .warn{background:rgba(255,160,0,0.1);border:1px solid rgba(255,160,0,0.3);padding:10px 14px;border-radius:8px;font-size:13px;color:#ffa500;margin-bottom:12px}
+    .date-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .date-row input{padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:12px}
+    .date-row label{font-size:12px;opacity:0.5}
+    .chart-card{background:#162010;padding:18px;border-radius:12px;border:1px solid rgba(74,154,48,0.2);margin-bottom:16px}
+    .chart-card h3{font-size:14px;font-weight:600;margin-bottom:14px;opacity:0.8}
+    .chart-wrap{position:relative;width:100%;height:220px}
+    .kpi-label{font-size:11px;opacity:0.5;margin-bottom:4px}
+    .kpi-val{font-size:20px;font-family:"Playfair Display"}
   </style>
 </head>
 <body>
@@ -40,34 +51,63 @@
       <div class="logo-text">Point<span>Sphere</span></div>
     </div>
     <div class="nav-item active" onclick="openPage('dashboard',this)">Dashboard</div>
+    <div class="nav-item" onclick="openPage('analytics',this)">Analytics</div>
     <div class="nav-item" onclick="openPage('transactions',this)">Transactions</div>
     <div class="nav-item" onclick="openPage('float',this)">Float History</div>
     <div class="nav-item" onclick="logout()">Logout</div>
   </aside>
 
   <main class="main">
+
     <!-- DASHBOARD -->
     <div id="dashboard" class="page active">
       <div class="topbar">
         <div class="title" id="partnerName">Dashboard</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn primary" onclick="downloadReport()">⬇ Download Report</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div class="date-row">
+            <label>From</label><input type="date" id="reportFrom"/>
+            <label>To</label><input type="date" id="reportTo"/>
+          </div>
+          <button class="btn primary" onclick="downloadReport()">⬇ Report</button>
+          <button class="btn invoice" onclick="downloadInvoice()">🧾 Invoice</button>
           <button class="btn" onclick="logout()">Logout</button>
         </div>
       </div>
 
       <div id="floatWarn" class="warn" style="display:none;">⚠ Float balance is below minimum threshold. Please contact admin to deposit.</div>
 
-      <div class="grid">
-        <div class="card">Float Balance<div class="big" id="floatBalance">—</div></div>
-        <div class="card">Points Issued<div class="big" style="color:#7ecc4a;" id="pointsIssued">—</div></div>
-        <div class="card">Points Redeemed<div class="big" style="color:#e8845a;" id="pointsRedeemed">—</div></div>
+      <div class="grid3">
+        <div class="card"><div class="kpi-label">Float Balance</div><div class="big" id="floatBalance">—</div></div>
+        <div class="card"><div class="kpi-label">Points Issued</div><div class="big" style="color:#7ecc4a;" id="pointsIssued">—</div></div>
+        <div class="card"><div class="kpi-label">Points Redeemed</div><div class="big" style="color:#e8845a;" id="pointsRedeemed">—</div></div>
       </div>
 
-      <div class="card">
+      <div class="card" style="margin-bottom:16px;">
         <p style="font-size:13px;opacity:0.6;margin-bottom:6px;">Conversion Rate</p>
         <p id="convRate" style="font-size:16px;">—</p>
-        <p style="font-size:12px;opacity:0.4;margin-top:4px;">Set by admin. Points are automatically calculated at POS.</p>
+        <p style="font-size:12px;opacity:0.4;margin-top:4px;">Set by admin. Points calculated automatically at POS.</p>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="analytics" class="page">
+      <div class="topbar"><div class="title">Performance Analytics</div><span style="font-size:12px;opacity:0.5;">Last 30 days</span></div>
+
+      <div class="grid4" id="analyticsKpis">
+        <div class="card"><div class="kpi-label">Points Issued (30d)</div><div class="big" id="kpiEarn">—</div></div>
+        <div class="card"><div class="kpi-label">Points Redeemed (30d)</div><div class="big" style="color:#e8845a;" id="kpiRedeem">—</div></div>
+        <div class="card"><div class="kpi-label">Transactions (30d)</div><div class="big" id="kpiTxn">—</div></div>
+        <div class="card"><div class="kpi-label">Float Balance</div><div class="big" id="kpiFloat">—</div></div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Points Issued vs Redeemed — Daily (Last 30 days)</h3>
+        <div class="chart-wrap"><canvas id="pointsChart" role="img" aria-label="Daily points issued and redeemed over the last 30 days"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Float Balance Trend</h3>
+        <div class="chart-wrap"><canvas id="floatChart" role="img" aria-label="Float balance trend over the last 30 days"></canvas></div>
       </div>
     </div>
 
@@ -92,50 +132,46 @@
         </table>
       </div>
     </div>
+
   </main>
 </div>
 
 <script>
-  const API = "http://127.0.0.1:8000/api";
+  const API   = "http://127.0.0.1:8000/api";
   const token = localStorage.getItem("token");
   if (!token || localStorage.getItem("role") !== "partner") window.location.href = "index.html";
 
+  let pointsChartInst = null;
+  let floatChartInst  = null;
+
   async function loadDashboard() {
     try {
-      const res = await fetch(`${API}/partner/dashboard/`, { headers: { "Authorization": token } });
-      const data = await res.json();
-      if (!res.ok) throw data;
-
-      document.getElementById("partnerName").innerText = data.business_name || data.name;
-      document.getElementById("floatBalance").innerText = "KSh " + data.float_balance.toLocaleString();
-      document.getElementById("pointsIssued").innerText = data.points_issued.toLocaleString();
+      const res  = await fetch(`${API}/partner/dashboard/`, { headers:{"Authorization":token} });
+      const data = await res.json(); if (!res.ok) throw data;
+      document.getElementById("partnerName").innerText    = data.business_name || data.name;
+      document.getElementById("floatBalance").innerText   = "KSh " + data.float_balance.toLocaleString();
+      document.getElementById("pointsIssued").innerText   = data.points_issued.toLocaleString();
       document.getElementById("pointsRedeemed").innerText = data.points_redeemed.toLocaleString();
-      document.getElementById("convRate").innerText = `${data.conversion_rate} pt per KSh 1 spent`;
-
+      document.getElementById("convRate").innerText       = `${data.conversion_rate} pt per KSh 1 spent`;
+      document.getElementById("kpiFloat").innerText       = "KSh " + data.float_balance.toLocaleString();
       if (data.float_low) document.getElementById("floatWarn").style.display = "block";
 
-      // Transactions
-      const tbody = document.getElementById("txBody");
-      tbody.innerHTML = data.transactions.length === 0
+      document.getElementById("txBody").innerHTML = data.transactions.length === 0
         ? "<tr><td colspan='6' style='opacity:0.5;'>No transactions yet.</td></tr>"
         : data.transactions.map(t => `
           <tr>
-            <td>${t.date}</td>
-            <td>${t.customer}</td>
+            <td>${t.date}</td><td>${t.customer}</td>
             <td class="${t.type}">${t.type}</td>
             <td class="${t.type}">${t.type==='earn'?'+':'-'}${t.points}</td>
-            <td>${t.amount_ksh ? 'KSh '+t.amount_ksh.toLocaleString() : '—'}</td>
+            <td>${t.amount_ksh?'KSh '+t.amount_ksh.toLocaleString():'—'}</td>
             <td style="opacity:0.5;">${t.pos_reference||'—'}</td>
           </tr>`).join("");
 
-      // Float history
-      const fbody = document.getElementById("floatBody");
-      fbody.innerHTML = data.float_history.length === 0
+      document.getElementById("floatBody").innerHTML = data.float_history.length === 0
         ? "<tr><td colspan='5' style='opacity:0.5;'>No float history yet.</td></tr>"
         : data.float_history.map(f => `
           <tr>
-            <td>${f.date}</td>
-            <td>${f.type}</td>
+            <td>${f.date}</td><td>${f.type}</td>
             <td>KSh ${f.amount.toLocaleString()}</td>
             <td>KSh ${f.balance_after.toLocaleString()}</td>
             <td style="opacity:0.5;">${f.reference||'—'}</td>
@@ -143,13 +179,100 @@
     } catch(err) { console.error(err); }
   }
 
-  function downloadReport() { window.open(`${API}/partner/report/?token=${token}`, "_blank"); }
+  async function loadAnalytics() {
+    try {
+      const res  = await fetch(`${API}/partner/analytics/`, { headers:{"Authorization":token} });
+      const data = await res.json(); if (!res.ok) throw data;
+
+      document.getElementById("kpiEarn").innerText   = data.summary.total_earn_30d.toLocaleString();
+      document.getElementById("kpiRedeem").innerText = data.summary.total_redeem_30d.toLocaleString();
+      document.getElementById("kpiTxn").innerText    = data.summary.txn_count_30d.toLocaleString();
+
+      // Points chart
+      const earnMap   = {};
+      const redeemMap = {};
+      data.daily_earn.forEach(d   => { earnMap[d.day]   = d.points; });
+      data.daily_redeem.forEach(d => { redeemMap[d.day] = d.points; });
+
+      // Build last 14 days labels
+      const labels = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        labels.push(d.toISOString().split("T")[0]);
+      }
+      const shortLabels = labels.map(l => { const d = new Date(l); return `${d.getDate()} ${d.toLocaleString('default',{month:'short'})}`; });
+
+      if (pointsChartInst) pointsChartInst.destroy();
+      pointsChartInst = new Chart(document.getElementById("pointsChart"), {
+        type: "bar",
+        data: {
+          labels: shortLabels,
+          datasets: [
+            { label:"Points Issued",   data: labels.map(l => earnMap[l]||0),   backgroundColor:"rgba(126,204,74,0.7)",  borderRadius:4 },
+            { label:"Points Redeemed", data: labels.map(l => redeemMap[l]||0), backgroundColor:"rgba(232,132,90,0.7)", borderRadius:4 },
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ labels:{ color:"#ccc", font:{ size:12 } } } },
+          scales:{
+            x:{ ticks:{ color:"#888", font:{size:11} }, grid:{ color:"rgba(255,255,255,0.05)" } },
+            y:{ ticks:{ color:"#888", font:{size:11} }, grid:{ color:"rgba(255,255,255,0.05)" } }
+          }
+        }
+      });
+
+      // Float trend chart
+      if (floatChartInst) floatChartInst.destroy();
+      if (data.float_trend.length > 0) {
+        floatChartInst = new Chart(document.getElementById("floatChart"), {
+          type: "line",
+          data: {
+            labels: data.float_trend.map(f => f.date),
+            datasets: [{
+              label:"Float Balance (KSh)",
+              data: data.float_trend.map(f => f.balance_after),
+              borderColor:"#4a9a30",
+              backgroundColor:"rgba(74,154,48,0.1)",
+              fill:true, tension:0.3, pointRadius:4,
+              pointBackgroundColor:"#4a9a30"
+            }]
+          },
+          options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ labels:{ color:"#ccc", font:{size:12} } } },
+            scales:{
+              x:{ ticks:{ color:"#888", font:{size:11} }, grid:{ color:"rgba(255,255,255,0.05)" } },
+              y:{ ticks:{ color:"#888", font:{size:11}, callback: v => "KSh "+v.toLocaleString() }, grid:{ color:"rgba(255,255,255,0.05)" } }
+            }
+          }
+        });
+      } else {
+        document.getElementById("floatChart").parentElement.innerHTML = "<p style='opacity:0.4;text-align:center;padding:40px;'>No float history yet.</p>";
+      }
+
+    } catch(err) { console.error(err); }
+  }
+
+  function downloadReport() {
+    const from = document.getElementById("reportFrom").value;
+    const to   = document.getElementById("reportTo").value;
+    let url    = `${API}/partner/report/?token=${token}`;
+    if (from) url += `&date_from=${from}`;
+    if (to)   url += `&date_to=${to}`;
+    window.open(url, "_blank");
+  }
+
+  function downloadInvoice() {
+    window.open(`${API}/partner/invoice/?token=${token}`, "_blank");
+  }
 
   function openPage(id, el) {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById(id).classList.add("active");
     document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
     el.classList.add("active");
+    if (id === "analytics") loadAnalytics();
   }
 
   function logout() { localStorage.clear(); window.location.href = "index.html"; }

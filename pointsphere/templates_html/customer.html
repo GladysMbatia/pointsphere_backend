@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PointSphere – My Account</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"DM Sans",sans-serif;background:#1e1008;color:#faf6ef;min-height:100vh}
@@ -16,18 +16,20 @@
     .nav-item{padding:0.7rem 1.25rem;cursor:pointer;font-size:13px;opacity:0.7}
     .nav-item.active,.nav-item:hover{background:rgba(196,98,45,0.15);opacity:1}
     .main{overflow:auto}
-    .topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;border-bottom:1px solid rgba(212,160,23,0.15)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;border-bottom:1px solid rgba(212,160,23,0.15);flex-wrap:wrap;gap:10px}
     .content{padding:2rem}
     .card{background:#2a160a;border:1px solid rgba(212,160,23,0.15);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
     .btn{padding:0.6rem 1rem;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px}
     .btn-primary{background:#c4622d;color:white}
-    .btn-gold{background:#d4a017;color:black}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
     .section{display:none}.section.active{display:block}
     .points-big{font-size:2.5rem;font-family:"Playfair Display";color:#f0c040}
     .tx-item{display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
     .earn{color:#7ecc4a}.redeem{color:#e8845a}
     .badge-info{background:rgba(212,160,23,0.15);color:#d4a017;padding:3px 10px;border-radius:20px;font-size:11px}
+    .date-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .date-row input{padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:12px}
+    .date-row label{font-size:12px;opacity:0.5}
   </style>
 </head>
 <body>
@@ -45,11 +47,16 @@
   <div class="main">
     <div class="topbar">
       <div id="welcome">Welcome</div>
-      <button class="btn btn-primary" onclick="downloadReport()">⬇ Download Report</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="date-row">
+          <label>From</label><input type="date" id="reportFrom"/>
+          <label>To</label><input type="date" id="reportTo"/>
+        </div>
+        <button class="btn btn-primary" onclick="downloadReport()">⬇ Download Report</button>
+      </div>
     </div>
 
     <div class="content">
-      <!-- DASHBOARD -->
       <div id="dashboard" class="section active">
         <div class="card">
           <p style="opacity:0.6;margin-bottom:4px;">Points Balance</p>
@@ -59,7 +66,6 @@
           &nbsp;
           <span class="badge-info" id="redeemedBadge">Redeemed: —</span>
         </div>
-
         <div class="grid">
           <div class="card">
             <h3 style="margin-bottom:8px;">How to earn points</h3>
@@ -70,14 +76,12 @@
             <p style="opacity:0.6;font-size:13px;line-height:1.6;">Ask the cashier to redeem your points at any partner outlet. Points are converted to a discount on your purchase instantly.</p>
           </div>
         </div>
-
         <div class="card">
           <h3 style="margin-bottom:1rem;">Recent Transactions</h3>
           <div id="recentTx"><p style="opacity:0.5;">Loading...</p></div>
         </div>
       </div>
 
-      <!-- TRANSACTIONS -->
       <div id="transactions" class="section">
         <div class="card">
           <h2 style="margin-bottom:1rem;">Full Transaction History</h2>
@@ -89,36 +93,39 @@
 </div>
 
 <script>
-  const API = "http://127.0.0.1:8000/api";
+  const API   = "http://127.0.0.1:8000/api";
   const token = localStorage.getItem("token");
   if (!token || localStorage.getItem("role") !== "customer") window.location.href = "index.html";
 
   async function loadProfile() {
     try {
-      const res = await fetch(`${API}/customer/profile/`, { headers: { "Authorization": token } });
-      const data = await res.json();
-      if (!res.ok) throw data;
-
-      document.getElementById("welcome").innerText = "Welcome, " + data.name;
-      document.getElementById("points").innerText = data.points.toLocaleString();
-      document.getElementById("earnedBadge").innerText = "Earned: " + data.total_earned.toLocaleString();
-      document.getElementById("redeemedBadge").innerText = "Redeemed: " + data.total_redeemed.toLocaleString();
-
-      const renderTx = (txs) => txs.length === 0
+      const res  = await fetch(`${API}/customer/profile/`, { headers:{"Authorization":token} });
+      const data = await res.json(); if (!res.ok) throw data;
+      document.getElementById("welcome").innerText        = "Welcome, " + data.name;
+      document.getElementById("points").innerText         = data.points.toLocaleString();
+      document.getElementById("earnedBadge").innerText    = "Earned: " + data.total_earned.toLocaleString();
+      document.getElementById("redeemedBadge").innerText  = "Redeemed: " + data.total_redeemed.toLocaleString();
+      const renderTx = txs => txs.length === 0
         ? "<p style='opacity:0.5;'>No transactions yet.</p>"
         : txs.map(t => `
           <div class="tx-item">
-            <span>${t.note || t.type} <span style="opacity:0.4;font-size:11px;">(${t.partner})</span></span>
+            <span>${t.note||t.type} <span style="opacity:0.4;font-size:11px;">(${t.partner})</span></span>
             <span class="${t.type}">${t.type==='earn'?'+':'-'}${t.points} pts</span>
             <span style="opacity:0.4;font-size:11px;">${t.date}</span>
           </div>`).join("");
-
       document.getElementById("recentTx").innerHTML = renderTx(data.transactions.slice(0,5));
-      document.getElementById("txList").innerHTML = renderTx(data.transactions);
+      document.getElementById("txList").innerHTML   = renderTx(data.transactions);
     } catch(err) { console.error(err); }
   }
 
-  function downloadReport() { window.open(`${API}/customer/report/?token=${token}`, "_blank"); }
+  function downloadReport() {
+    const from = document.getElementById("reportFrom").value;
+    const to   = document.getElementById("reportTo").value;
+    let url    = `${API}/customer/report/?token=${token}`;
+    if (from) url += `&date_from=${from}`;
+    if (to)   url += `&date_to=${to}`;
+    window.open(url, "_blank");
+  }
 
   function switchTab(tab, el) {
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
