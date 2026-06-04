@@ -309,7 +309,7 @@ async function process(type) {
     } else {
       const pts = parseInt(prompt(`Redeem how many points?\nCustomer balance: ${currentCustomer.points} pts`));
       if (!pts || pts <= 0) throw {error:"Cancelled"};
-      const res  = await fetch(`${API}/pos/redeem/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,points:pts,pos_reference:posRef,note:"Naivas redemption"}) });
+      const res  = await fetch(`${API}/pos/redeem/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,points:pts,amount_ksh:amount,pos_reference:posRef,note:"Naivas redemption"}) });
       const data = await res.json(); if (!res.ok) throw data; return data;
     }
   });

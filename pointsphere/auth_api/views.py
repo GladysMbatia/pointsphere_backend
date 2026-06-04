@@ -70,7 +70,7 @@ def register(request):
 
     if role == "partner":
         PartnerProfile.objects.create(user=user, business_name=name)
-        ConversionRate.objects.create(partner=user, points_per_ksh=Decimal("0.1"), updated_by=None)
+        ConversionRate.objects.create(partner=user, points_per_ksh=Decimal("0.01"), updated_by=None)
 
     log_action(request, user, "register", target=f"{role}:{phone}")
     return JsonResponse({"message": "Account created successfully", "role": role}, status=201)
@@ -201,7 +201,7 @@ def partner_dashboard(request):
         "points_issued": points_issued,
         "points_redeemed": points_redeemed,
         "is_active": profile.is_active,
-        "conversion_rate": float(rate.points_per_ksh) if rate else 0.1,
+        "conversion_rate": float(rate.points_per_ksh) if rate else 0.01,
         "transactions": tx_list,
         "float_history": float_history,
     })
@@ -238,7 +238,7 @@ def admin_dashboard(request):
             "min_float_threshold": float(profile.min_float_threshold) if profile else 1000,
             "float_low": profile.is_float_low() if profile else False,
             "is_active": profile.is_active if profile else True,
-            "conversion_rate": float(rate.points_per_ksh) if rate else 0.1,
+            "conversion_rate": float(rate.points_per_ksh) if rate else 0.01,
         })
 
     return JsonResponse({
@@ -332,7 +332,7 @@ def admin_set_conversion_rate(request):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
     partner_id     = data.get("partner_id")
-    points_per_ksh = Decimal(str(data.get("points_per_ksh", 0.1)))
+    points_per_ksh = Decimal(str(data.get("points_per_ksh", 0.01)))
     min_spend      = Decimal(str(data.get("min_spend_ksh", 0)))
 
     if points_per_ksh <= 0:
@@ -420,6 +420,8 @@ def pos_earn(request):
     if err:
         return err
 
+    partner = actor
+    
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -446,7 +448,7 @@ def pos_earn(request):
     except ConversionRate.DoesNotExist:
         rate = None
 
-    points = rate.calculate_points(amount_ksh) if rate else int(amount_ksh * 0.1)
+    points = rate.calculate_points(amount_ksh) if rate else int(amount_ksh * 0.01)
 
     if points <= 0:
         return JsonResponse({"error": f"Spend of KSh {amount_ksh} does not meet minimum for earning points"}, status=400)
@@ -506,6 +508,8 @@ def pos_redeem(request):
     actor, err = get_user_from_token(request, ["partner"])
     if err:
         return err
+
+    partner = actor
 
     try:
         data = json.loads(request.body)
@@ -751,7 +755,7 @@ def partner_report(request):
         ["Float Status",         "LOW ⚠" if profile.is_float_low() else "Healthy"],
         ["Points Issued",        str(earned)],
         ["Points Redeemed",      str(redeemed)],
-        ["Conversion Rate",      f"{float(rate.points_per_ksh)} pt/KSh" if rate else "0.1 pt/KSh"],
+        ["Conversion Rate",      f"{float(rate.points_per_ksh)} pt/KSh" if rate else "0.01 pt/KSh"],
         ["Status",               "Active" if profile.is_active else "Inactive"],
     ]
 
@@ -831,7 +835,7 @@ def admin_report(request):
             p.name,
             profile.business_name if profile else "—",
             f"{float(profile.float_balance):,.2f}" if profile else "0.00",
-            f"{float(rate.points_per_ksh)}" if rate else "0.1",
+            f"{float(rate.points_per_ksh)}" if rate else "0.01",
             "Active" if (profile and profile.is_active) else "Inactive",
         ])
     if len(partner_rows) == 1:

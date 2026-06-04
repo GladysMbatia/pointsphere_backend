@@ -53,7 +53,7 @@ class PartnerProfile(models.Model):
 class ConversionRate(models.Model):
     """Points awarded per KSh spent — set per partner by admin."""
     partner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='conversion_rate')
-    points_per_ksh = models.DecimalField(max_digits=8, decimal_places=4, default=1)  # e.g. 0.1 = 1pt per KSh 10
+    points_per_ksh = models.DecimalField(max_digits=8, decimal_places=4, default=1)  # e.g. 0.01 = 1pt per KSh 100
     min_spend_ksh = models.DecimalField(max_digits=10, decimal_places=2, default=0)   # minimum spend to earn
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='rates_set')
