@@ -9,12 +9,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Add cashier role to User
         migrations.AlterField(
             model_name='user',
             name='role',
             field=models.CharField(
-                choices=[('customer','Customer'),('partner','Partner'),('admin','Admin'),('cashier','Cashier')],
+                choices=[('customer','Customer'),('partner','Partner'),('admin','Admin')],
                 default='customer', max_length=20,
             ),
         ),
@@ -26,13 +25,6 @@ class Migration(migrations.Migration):
             field=models.DecimalField(decimal_places=2, default=1000, max_digits=12),
         ),
 
-        # Add cashier + amount fields to Transaction
-        migrations.AddField(
-            model_name='transaction',
-            name='cashier',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='cashier_transactions', to='auth_api.user'),
-        ),
         migrations.AddField(
             model_name='transaction',
             name='amount_ksh',
@@ -47,20 +39,6 @@ class Migration(migrations.Migration):
             model_name='transaction',
             name='pos_reference',
             field=models.CharField(blank=True, default='', max_length=100),
-        ),
-
-        # CashierProfile
-        migrations.CreateModel(
-            name='CashierProfile',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE,
-                                              related_name='cashier_profile', to='auth_api.user')),
-                ('partner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
-                                              related_name='cashiers', to='auth_api.user')),
-            ],
         ),
 
         # ConversionRate

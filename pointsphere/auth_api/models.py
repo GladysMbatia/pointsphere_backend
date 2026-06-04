@@ -8,7 +8,6 @@ class User(models.Model):
         ('customer', 'Customer'),
         ('partner', 'Partner'),
         ('admin', 'Admin'),
-        ('cashier', 'Cashier'),
     ]
 
     name = models.CharField(max_length=150)
@@ -49,17 +48,6 @@ class PartnerProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.name} – float: {self.float_balance}"
-
-
-class CashierProfile(models.Model):
-    """Links a cashier user to a partner."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cashier_profile')
-    partner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cashiers')
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.name} (cashier for {self.partner.name})"
 
 
 class ConversionRate(models.Model):
@@ -110,7 +98,6 @@ class Transaction(models.Model):
 
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     partner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_transactions')
-    cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cashier_transactions')
     transaction_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     points = models.IntegerField()
     amount_ksh = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # original spend amount

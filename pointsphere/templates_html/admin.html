@@ -77,7 +77,6 @@
     <div class="nav-item" onclick="navTo('float',this)">Float Management</div>
     <div class="nav-item" onclick="navTo('liabilities',this)">Liabilities</div>
     <div class="nav-item" onclick="navTo('rates',this)">Conversion Rates</div>
-    <div class="nav-item" onclick="navTo('cashiers',this)">Cashiers</div>
     <div class="nav-item" onclick="navTo('audit',this)">Audit Log</div>
     <div class="nav-item" onclick="logout()">Logout</div>
   </aside>
@@ -202,21 +201,6 @@
         </div>
       </div>
 
-      <!-- CASHIERS -->
-      <div id="cashiers" class="page">
-        <div class="section-card">
-          <h3 style="margin-bottom:1rem;">Add Cashier</h3>
-          <div class="input-row">
-            <div class="field"><label>Full Name</label><input id="cashierName" placeholder="Cashier name"/></div>
-            <div class="field"><label>Phone (9 digits)</label><input id="cashierPhone" placeholder="7XXXXXXXX"/></div>
-            <div class="field"><label>4-digit PIN</label><input id="cashierPin" type="password" maxlength="4" placeholder="••••"/></div>
-            <div class="field"><label>Assign to Partner</label><select id="cashierPartner"></select></div>
-          </div>
-          <button class="btn primary" onclick="addCashier()">Add Cashier</button>
-          <div id="cashierResult"></div>
-        </div>
-      </div>
-
       <!-- AUDIT LOG -->
       <div id="audit" class="page">
         <div class="section-card">
@@ -256,7 +240,7 @@
       partnersData = data.partners;
 
       // Populate all partner selects
-      ["floatPartner","thresholdPartner","ratePartner","cashierPartner"].forEach(id => {
+      ["floatPartner","thresholdPartner","ratePartner"].forEach(id => {
         const sel = document.getElementById(id);
         sel.innerHTML = partnersData.map(p =>
           `<option value="${p.id}">${p.business_name} (${p.phone})</option>`).join("");
@@ -414,22 +398,6 @@
             <td style="opacity:0.5;">${r.updated_at}</td>
           </tr>`).join("");
     } catch(err) { console.error(err); }
-  }
-
-  async function addCashier() {
-    const name       = document.getElementById("cashierName").value.trim();
-    const phone      = document.getElementById("cashierPhone").value.trim();
-    const pin        = document.getElementById("cashierPin").value.trim();
-    const partner_id = document.getElementById("cashierPartner").value;
-    const resultEl   = document.getElementById("cashierResult");
-    try {
-      const res  = await fetch(`${API}/admin/cashier/add/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":token}, body:JSON.stringify({name,phone,pin,partner_id}) });
-      const data = await res.json(); if (!res.ok) throw data;
-      showResult(resultEl, "✅ " + data.message, true);
-      document.getElementById("cashierName").value  = "";
-      document.getElementById("cashierPhone").value = "";
-      document.getElementById("cashierPin").value   = "";
-    } catch(err) { showResult(resultEl, "❌ " + (err.error || "Failed"), false); }
   }
 
   async function loadAudit() {

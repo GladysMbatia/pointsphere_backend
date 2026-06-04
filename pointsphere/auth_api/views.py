@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from .models import User, PartnerProfile, CashierProfile, ConversionRate, FloatTransaction, Transaction, AuditLog
+from .models import User, PartnerProfile, ConversionRate, FloatTransaction, Transaction, AuditLog
 
 
 # ─────────────────────────────────────────
@@ -219,7 +219,6 @@ def admin_dashboard(request):
 
     customers    = User.objects.filter(role="customer")
     partners     = User.objects.filter(role="partner")
-    cashiers     = User.objects.filter(role="cashier")
     total_points = sum(c.points for c in customers)
     total_float  = sum(
         float(p.partner_profile.float_balance)
@@ -245,7 +244,6 @@ def admin_dashboard(request):
     return JsonResponse({
         "total_customers": customers.count(),
         "total_partners": partners.count(),
-        "total_cashiers": cashiers.count(),
         "total_points_in_circulation": total_points,
         "total_float": total_float,
         "partners": partner_list,
@@ -384,50 +382,6 @@ def admin_conversion_rates(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
-def admin_add_cashier(request):
-    """Admin registers a cashier and links them to a partner."""
-    user, err = get_user_from_token(request, "admin")
-    if err:
-        return err
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    name       = data.get("name", "").strip()
-    phone      = data.get("phone", "").strip()
-    pin        = data.get("pin", "").strip()
-    partner_id = data.get("partner_id")
-
-    if not name:
-        return JsonResponse({"error": "Name required"}, status=400)
-    if len(phone) != 9 or not phone.isdigit():
-        return JsonResponse({"error": "Phone must be 9 digits"}, status=400)
-    if len(pin) != 4 or not pin.isdigit():
-        return JsonResponse({"error": "PIN must be 4 digits"}, status=400)
-
-    try:
-        partner = User.objects.get(id=partner_id, role="partner")
-    except User.DoesNotExist:
-        return JsonResponse({"error": "Partner not found"}, status=404)
-
-    if User.objects.filter(phone=phone, role="cashier").exists():
-        return JsonResponse({"error": "Cashier already exists"}, status=409)
-
-    cashier = User(name=name, phone=phone, role="cashier")
-    cashier.set_pin(pin)
-    cashier.save()
-    CashierProfile.objects.create(user=cashier, partner=partner)
-
-    log_action(request, user, "add_cashier",
-               target=f"cashier:{phone}",
-               detail=f"partner={partner.name}")
-
-    return JsonResponse({"message": f"Cashier {name} added for {partner.name}"}, status=201)
-
-
-@csrf_exempt
 @require_http_methods(["GET"])
 def admin_audit_log(request):
     user, err = get_user_from_token(request, "admin")
@@ -459,10 +413,10 @@ def admin_audit_log(request):
 def pos_earn(request):
     """
     POS system awards points to a customer after a purchase.
-    Auth: cashier or partner token in Authorization header.
+    Auth: partner token in Authorization header.
     Body: { phone, amount_ksh, pos_reference }
     """
-    actor, err = get_user_from_token(request, ["cashier", "partner"])
+    actor, err = get_user_from_token(request, ["partner"])
     if err:
         return err
 
@@ -485,17 +439,6 @@ def pos_earn(request):
         customer = User.objects.get(phone=phone, role="customer")
     except User.DoesNotExist:
         return JsonResponse({"error": "Customer not found"}, status=404)
-
-    # Determine partner
-    if actor.role == "cashier":
-        cashier_profile = getattr(actor, "cashier_profile", None)
-        if not cashier_profile:
-            return JsonResponse({"error": "Cashier not linked to a partner"}, status=400)
-        partner = cashier_profile.partner
-        cashier = actor
-    else:
-        partner = actor
-        cashier = None
 
     # Get conversion rate
     try:
@@ -527,7 +470,7 @@ def pos_earn(request):
     customer.save(update_fields=["points"])
 
     tx = Transaction.objects.create(
-        customer=customer, partner=partner, cashier=cashier,
+        customer=customer, partner=partner, 
         transaction_type="earn", points=points,
         amount_ksh=Decimal(str(amount_ksh)),
         monetary_value=monetary_value,
@@ -557,10 +500,10 @@ def pos_earn(request):
 def pos_redeem(request):
     """
     POS system redeems points for a customer.
-    Auth: cashier or partner token.
+    Auth: partner token.
     Body: { phone, points, pos_reference }
     """
-    actor, err = get_user_from_token(request, ["cashier", "partner"])
+    actor, err = get_user_from_token(request, ["partner"])
     if err:
         return err
 
@@ -586,17 +529,6 @@ def pos_redeem(request):
 
     if customer.points < points:
         return JsonResponse({"error": f"Insufficient points. Balance: {customer.points}"}, status=400)
-
-    # Determine partner
-    if actor.role == "cashier":
-        cashier_profile = getattr(actor, "cashier_profile", None)
-        if not cashier_profile:
-            return JsonResponse({"error": "Cashier not linked to a partner"}, status=400)
-        partner = cashier_profile.partner
-        cashier = actor
-    else:
-        partner = actor
-        cashier = None
 
     monetary_value = Decimal(str(points))  # 1pt = KSh 1
     profile = getattr(partner, "partner_profile", None)
@@ -631,7 +563,7 @@ def pos_redeem(request):
     customer.save(update_fields=["points"])
 
     tx = Transaction.objects.create(
-        customer=customer, partner=partner, cashier=cashier,
+        customer=customer, partner=partner, 
         transaction_type="redeem", points=points,
         monetary_value=monetary_value,
         note=note, pos_reference=pos_reference,
@@ -659,7 +591,7 @@ def pos_redeem(request):
 @require_http_methods(["GET"])
 def pos_customer_lookup(request):
     """POS looks up customer by phone to verify before transaction."""
-    actor, err = get_user_from_token(request, ["cashier", "partner"])
+    actor, err = get_user_from_token(request, ["partner"])
     if err:
         return err
 
@@ -871,7 +803,6 @@ def admin_report(request):
 
     customers    = User.objects.filter(role="customer")
     partners     = User.objects.filter(role="partner")
-    cashiers     = User.objects.filter(role="cashier")
     transactions = Transaction.objects.order_by("-created_at")
     total_points = sum(c.points for c in customers)
     total_float  = sum(float(p.partner_profile.float_balance) for p in partners if hasattr(p, "partner_profile"))
@@ -880,7 +811,6 @@ def admin_report(request):
         ["Metric", "Value"],
         ["Total Customers",           str(customers.count())],
         ["Total Partners",            str(partners.count())],
-        ["Total Cashiers",            str(cashiers.count())],
         ["Points in Circulation",     str(total_points)],
         ["Total Float (KSh)",         f"{total_float:,.2f}"],
         ["Total Transactions",        str(transactions.count())],

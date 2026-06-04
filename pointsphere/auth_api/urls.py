@@ -27,7 +27,6 @@ urlpatterns = [
     path("admin/float/deposit/", views.admin_float_deposit),
     path("admin/conversion-rates/", views.admin_conversion_rates),
     path("admin/conversion-rates/set/", views.admin_set_conversion_rate),
-    path("admin/cashier/add/", views.admin_add_cashier),
     path("admin/audit-log/", views.admin_audit_log),
     path("admin/report/", views.admin_report),
     path("admin/partner-invoice/", views.partner_invoice),
