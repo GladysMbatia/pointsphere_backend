@@ -47,12 +47,30 @@
     .customer-card{background:#fff5f5;border:1.5px solid #fcc;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none}
     .customer-card .cname{font-weight:700;font-size:14px;color:var(--brand)}
     .customer-card .cpts{font-size:13px;color:var(--gold);margin-top:2px}
+    /* Amount breakdown */
+    .amount-breakdown{background:#f8fafc;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:none}
+    .amount-breakdown .ab-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;opacity:0.45;margin-bottom:10px}
+    .ab-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:3px 0}
+    .ab-row.total{border-top:1px dashed #cde;margin-top:6px;padding-top:8px;font-weight:700;font-size:14px}
+    .ab-row .ab-label{color:#555}
+    .ab-row .ab-val{font-family:"DM Mono";font-weight:600}
+    .ab-row.deduct .ab-val{color:var(--red)}
+    .ab-row.total .ab-val{color:var(--brand)}
+    /* Redeem section */
+    .redeem-section{background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:none}
+    .redeem-section .rs-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gold);margin-bottom:10px}
+    .redeem-row{display:flex;gap:8px;align-items:center}
+    .redeem-row input{flex:1;padding:10px 14px;border:1.5px solid #fde68a;border-radius:8px;font-size:15px;font-family:"DM Mono";outline:none;background:#fff}
+    .redeem-row input:focus{border-color:var(--gold)}
+    .redeem-row .pts-label{font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap}
+    .redeem-equiv{font-size:12px;color:var(--gold);margin-top:6px;min-height:16px}
     .pts-preview{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--gold);margin-bottom:14px;text-align:center;display:none}
     .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .btn{padding:13px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px}
     .btn-earn{background:var(--green);color:#fff}
     .btn-redeem{background:var(--gold);color:#fff}
     .btn-clear{background:#f5f5f5;color:#666;font-size:12px;grid-column:span 2;padding:9px}
+    .info-tag{font-size:11px;background:#fce8ea;color:var(--brand);border-radius:6px;padding:2px 7px;margin-left:6px;font-weight:600;vertical-align:middle}
 
     /* FLOW + RECEIPT */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:50}
@@ -118,14 +136,42 @@
       <div class="cpts" id="custPts">— pts</div>
     </div>
     <div class="field">
-      <label>Total Amount Spent (KSh)</label>
-      <input id="amount" type="number" placeholder="e.g. 2500" min="1" oninput="updatePreview()"/>
+      <label>Total Bill (KSh) <span class="info-tag">Gross</span></label>
+      <input id="totalAmount" type="number" placeholder="e.g. 2500" min="1" oninput="recalculate()"/>
     </div>
+
+    <!-- Redeem points section — shown after customer lookup -->
+    <div class="redeem-section" id="redeemSection">
+      <div class="rs-title">⭐ Redeem Points</div>
+      <div class="redeem-row">
+        <input id="redeemPts" type="number" placeholder="0" min="0" oninput="redeemPtsChanged()"/>
+        <span class="pts-label">pts available: <span id="maxPtsLabel">0</span></span>
+      </div>
+      <div class="redeem-equiv" id="redeemEquiv"></div>
+    </div>
+
+    <!-- Auto-calculated amount breakdown -->
+    <div class="amount-breakdown" id="amountBreakdown">
+      <div class="ab-title">Amount Breakdown</div>
+      <div class="ab-row">
+        <span class="ab-label">Total Bill</span>
+        <span class="ab-val" id="abTotal">KSh 0</span>
+      </div>
+      <div class="ab-row deduct">
+        <span class="ab-label">Points Redeemed (value)</span>
+        <span class="ab-val" id="abRedeem">− KSh 0</span>
+      </div>
+      <div class="ab-row total">
+        <span class="ab-label">Amount Charged (Cash)</span>
+        <span class="ab-val" id="abCharged">KSh 0</span>
+      </div>
+    </div>
+
+    <div class="pts-preview" id="ptsPreview"></div>
     <div class="field">
       <label>POS Reference (optional)</label>
       <input id="posRef" placeholder="e.g. NVS-00123"/>
     </div>
-    <div class="pts-preview" id="ptsPreview"></div>
     <div class="action-btns">
       <button class="btn btn-earn" onclick="process('earn')">✓ Earn Points</button>
       <button class="btn btn-redeem" onclick="process('redeem')">★ Redeem Points</button>
@@ -159,12 +205,12 @@
 <script>
 const API   = "http://127.0.0.1:8000/api";
 const STORE = "pos_token_supermarket";
-const RATE  = 0.01;
+const EARN_RATE  = 0.01;  /* KSh → pts: 1% */
+const REDEEM_RATE = 1;    /* pts → KSh: 1 pt = KSh 1 */
 let POS_TOKEN = "";
 let currentCustomer = null;
 
 const PRODUCTS = [
-  // Unilever
   {supplier:"unilever", name:"Omo Detergent 1kg",      price:320,  pack:"1kg pack"},
   {supplier:"unilever", name:"Sunlight Dish Soap",     price:85,   pack:"500ml"},
   {supplier:"unilever", name:"Lifebuoy Soap",          price:55,   pack:"100g bar"},
@@ -173,7 +219,6 @@ const PRODUCTS = [
   {supplier:"unilever", name:"Close-Up Toothpaste",    price:120,  pack:"75ml"},
   {supplier:"unilever", name:"Rexona Deodorant",       price:180,  pack:"150ml"},
   {supplier:"unilever", name:"Knorr Chicken Stock",    price:45,   pack:"4 cubes"},
-  // Nestlé
   {supplier:"nestle",   name:"Milo 400g",              price:380,  pack:"400g tin"},
   {supplier:"nestle",   name:"Nescafé Classic",        price:320,  pack:"100g jar"},
   {supplier:"nestle",   name:"Maggi Noodles",          price:35,   pack:"70g pack"},
@@ -182,7 +227,6 @@ const PRODUCTS = [
   {supplier:"nestle",   name:"Nestlé Pure Life Water", price:50,   pack:"500ml"},
   {supplier:"nestle",   name:"Milkmaid Condensed",     price:120,  pack:"397g tin"},
   {supplier:"nestle",   name:"Nescafé 3-in-1",         price:25,   pack:"per sachet"},
-  // Coca-Cola
   {supplier:"cocacola", name:"Coca-Cola 500ml",        price:60,   pack:"500ml bottle"},
   {supplier:"cocacola", name:"Sprite 500ml",           price:60,   pack:"500ml bottle"},
   {supplier:"cocacola", name:"Fanta Orange 500ml",     price:60,   pack:"500ml bottle"},
@@ -193,7 +237,7 @@ const PRODUCTS = [
   {supplier:"cocacola", name:"Bonaqua Water 1.5L",     price:90,   pack:"1.5L"},
 ];
 
-const TAG = { unilever:"unilever-tag", nestle:"nestle-tag", cocacola:"cocacola-tag" };
+const TAG   = { unilever:"unilever-tag", nestle:"nestle-tag", cocacola:"cocacola-tag" };
 const LABEL = { unilever:"Unilever", nestle:"Nestlé", cocacola:"Coca-Cola" };
 
 function renderProducts(supplier) {
@@ -243,25 +287,63 @@ async function lookupCustomer() {
     document.getElementById("custName").innerText = data.name;
     document.getElementById("custPts").innerText  = data.points.toLocaleString() + " pts";
     document.getElementById("custCard").style.display = "block";
-    updatePreview();
+    document.getElementById("maxPtsLabel").innerText = data.points.toLocaleString();
+    document.getElementById("redeemSection").style.display = "block";
+    recalculate();
   } catch(err) { alert(err.error || "Customer not found"); }
 }
 
-function updatePreview() {
-  const el     = document.getElementById("ptsPreview");
-  const amount = parseFloat(document.getElementById("amount").value) || 0;
-  if (!currentCustomer || amount <= 0) { el.style.display = "none"; return; }
-  const pts = Math.floor(amount * RATE);
-  el.style.display = "block";
-  el.innerHTML = `<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong> on KSh ${amount.toLocaleString()} spend`;
+function redeemPtsChanged() {
+  if (!currentCustomer) return;
+  const pts = parseInt(document.getElementById("redeemPts").value) || 0;
+  if (pts > currentCustomer.points) document.getElementById("redeemPts").value = currentCustomer.points;
+  recalculate();
 }
 
-function resetCustomer() { currentCustomer = null; document.getElementById("custCard").style.display = "none"; document.getElementById("ptsPreview").style.display = "none"; }
+function recalculate() {
+  const totalKsh   = parseFloat(document.getElementById("totalAmount").value) || 0;
+  const redeemPts  = parseInt(document.getElementById("redeemPts").value) || 0;
+  const redeemKsh  = redeemPts * REDEEM_RATE;
+
+  if (!currentCustomer || totalKsh <= 0) {
+    document.getElementById("amountBreakdown").style.display = "none";
+    document.getElementById("ptsPreview").style.display = "none";
+    document.getElementById("redeemEquiv").innerText = "";
+    return;
+  }
+
+  document.getElementById("redeemEquiv").innerText = redeemPts > 0
+    ? `= KSh ${redeemKsh.toLocaleString()} discount off your bill`
+    : "Enter points to redeem for a discount";
+
+  const chargedKsh = Math.max(0, totalKsh - redeemKsh);
+  const ptsEarned  = Math.floor(chargedKsh * EARN_RATE);
+
+  document.getElementById("abTotal").innerText   = `KSh ${totalKsh.toLocaleString()}`;
+  document.getElementById("abRedeem").innerText  = `− KSh ${redeemKsh.toLocaleString()}`;
+  document.getElementById("abCharged").innerText = `KSh ${chargedKsh.toLocaleString()}`;
+  document.getElementById("amountBreakdown").style.display = "block";
+
+  const ptsEl = document.getElementById("ptsPreview");
+  ptsEl.style.display = "block";
+  ptsEl.innerHTML = `<strong>${currentCustomer.name}</strong> will earn <strong>+${ptsEarned} pts</strong> on KSh ${chargedKsh.toLocaleString()} cash paid`;
+}
+
+function resetCustomer() {
+  currentCustomer = null;
+  document.getElementById("custCard").style.display = "none";
+  document.getElementById("ptsPreview").style.display = "none";
+  document.getElementById("amountBreakdown").style.display = "none";
+  document.getElementById("redeemSection").style.display = "none";
+  document.getElementById("redeemPts").value = "";
+  document.getElementById("redeemEquiv").innerText = "";
+}
 
 function clearAll() {
-  document.getElementById("phone").value  = "";
-  document.getElementById("amount").value = "";
-  document.getElementById("posRef").value = "";
+  document.getElementById("phone").value       = "";
+  document.getElementById("totalAmount").value = "";
+  document.getElementById("posRef").value      = "";
+  document.getElementById("redeemPts").value   = "";
   resetCustomer();
 }
 
@@ -297,39 +379,79 @@ async function animateFlow(apiFn) {
 
 async function process(type) {
   if (!currentCustomer) return alert("Lookup a customer first");
-  const amount = parseFloat(document.getElementById("amount").value);
-  if (!amount || amount <= 0) return alert("Enter a valid amount");
+  const totalKsh = parseFloat(document.getElementById("totalAmount").value);
+  if (!totalKsh || totalKsh <= 0) return alert("Enter a valid total bill amount");
   if (!POS_TOKEN) return alert("POS not logged in");
-  const posRef = document.getElementById("posRef").value.trim() || `NVS-${Date.now()}`;
-  showFlow(type === "earn" ? "Awarding Points..." : "Redeeming Points...");
-  const result = await animateFlow(async () => {
-    if (type === "earn") {
-      const res  = await fetch(`${API}/pos/earn/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:amount,pos_reference:posRef,note:"Naivas purchase"}) });
+  const posRef     = document.getElementById("posRef").value.trim() || `NVS-${Date.now()}`;
+  const redeemPts  = parseInt(document.getElementById("redeemPts").value) || 0;
+  const redeemKsh  = redeemPts * REDEEM_RATE;
+  const amountCharged = Math.max(0, totalKsh - redeemKsh);
+
+  if (type === "earn") {
+    showFlow("Awarding Points...");
+    const result = await animateFlow(async () => {
+      const res  = await fetch(`${API}/pos/earn/`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
+        body:JSON.stringify({
+          phone:currentCustomer.phone,
+          amount_ksh:amountCharged,
+          total_bill_ksh:totalKsh,
+          pos_reference:posRef,
+          note:"Naivas purchase"
+        })
+      });
       const data = await res.json(); if (!res.ok) throw data; return data;
-    } else {
-      const pts = parseInt(prompt(`Redeem how many points?\nCustomer balance: ${currentCustomer.points} pts`));
-      if (!pts || pts <= 0) throw {error:"Cancelled"};
-      const res  = await fetch(`${API}/pos/redeem/`, { method:"POST", headers:{"Content-Type":"application/json","Authorization":POS_TOKEN}, body:JSON.stringify({phone:currentCustomer.phone,points:pts,amount_ksh:amount,pos_reference:posRef,note:"Naivas redemption"}) });
+    });
+    await sleep(300);
+    document.getElementById("flowOverlay").classList.remove("show");
+    if (result?.success) showReceipt("earn", totalKsh, amountCharged, redeemPts, redeemKsh, result, posRef);
+    else if (result) alert("Error: " + (result.error || "Something went wrong"));
+
+  } else {
+    /* Pure redeem only */
+    if (redeemPts <= 0) return alert("Enter points to redeem first.");
+    if (redeemPts > currentCustomer.points) return alert(`Customer only has ${currentCustomer.points} pts`);
+
+    showFlow("Redeeming Points...");
+    const result = await animateFlow(async () => {
+      const res  = await fetch(`${API}/pos/redeem/`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
+        body:JSON.stringify({
+          phone:currentCustomer.phone,
+          points:redeemPts,
+          amount_ksh:totalKsh,
+          pos_reference:posRef,
+          note:"Naivas redemption"
+        })
+      });
       const data = await res.json(); if (!res.ok) throw data; return data;
-    }
-  });
-  await sleep(300);
-  document.getElementById("flowOverlay").classList.remove("show");
-  if (result?.success) showReceipt(type, amount, result, posRef);
-  else if (result) alert("Error: " + (result.error || "Something went wrong"));
+    });
+    await sleep(300);
+    document.getElementById("flowOverlay").classList.remove("show");
+    if (result?.success) showReceipt("redeem", totalKsh, amountCharged, redeemPts, redeemKsh, result, posRef);
+    else if (result) alert("Error: " + (result.error || "Something went wrong"));
+  }
 }
 
-function showReceipt(type, amount, result, posRef) {
+function showReceipt(type, totalKsh, chargedKsh, redeemPts, redeemKsh, result, posRef) {
+  const redeemRow = redeemPts > 0
+    ? `<div class="rrow"><span>Points Redeemed</span><span>${redeemPts.toLocaleString()} pts (KSh ${redeemKsh.toLocaleString()})</span></div>` : "";
   document.getElementById("receiptBody").innerHTML = `
     <div class="rrow"><span>Customer</span><span>${result.customer_name}</span></div>
-    <div class="rrow"><span>Amount Spent</span><span>KSh ${amount.toLocaleString()}</span></div>
+    <div class="rrow"><span>Total Bill</span><span>KSh ${totalKsh.toLocaleString()}</span></div>
+    ${redeemRow}
+    <div class="rrow"><span>Cash Charged</span><span>KSh ${chargedKsh.toLocaleString()}</span></div>
     <div class="rrow"><span>POS Reference</span><span>${posRef}</span></div>`;
-  document.getElementById("receiptPts").innerHTML = type === "earn"
-    ? `<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | New Balance: ${result.new_balance} pts</div>`
-    : `<div class="pval" style="color:#dc2626;">-${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
+  const ptsHtml = type === "earn"
+    ? `<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | Balance: ${result.new_balance} pts</div>`
+    : `<div class="pval" style="color:#dc2626;">−${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
+  document.getElementById("receiptPts").innerHTML = ptsHtml;
   document.getElementById("receiptMeta").innerText = `${new Date().toLocaleString()} | PointSphere Loyalty`;
   document.getElementById("receiptOverlay").classList.add("show");
 }
+
 function closeReceipt() { document.getElementById("receiptOverlay").classList.remove("show"); clearAll(); }
 </script>
 </body>

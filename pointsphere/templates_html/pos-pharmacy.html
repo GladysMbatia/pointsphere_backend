@@ -23,12 +23,30 @@
     .field label{display:block;font-size:12px;font-weight:600;opacity:0.5;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
     .field input,.field select{width:100%;padding:13px 16px;border:1.5px solid #b2dfdb;border-radius:10px;font-size:16px;font-family:"DM Mono";outline:none;transition:border 0.2s;background:#fff}
     .field input:focus,.field select:focus{border-color:var(--brand)}
+    .field input[readonly]{background:#f8f8f8;color:#555;cursor:not-allowed}
     .lookup-row{display:flex;gap:8px}
     .lookup-row input{flex:1}
     .lookup-btn{padding:13px 18px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
     .customer-card{background:#e0f2f1;border:1.5px solid #80cbc4;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:none}
     .customer-card .cname{font-weight:700;font-size:15px;color:var(--brand)}
     .customer-card .cpts{font-size:13px;color:var(--gold);margin-top:3px}
+    /* Amount breakdown card */
+    .amount-breakdown{background:#f8fafc;border:1.5px solid #b2dfdb;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none}
+    .amount-breakdown .ab-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;opacity:0.45;margin-bottom:10px}
+    .ab-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:3px 0}
+    .ab-row.total{border-top:1px dashed #cde;margin-top:6px;padding-top:8px;font-weight:700;font-size:14px}
+    .ab-row .ab-label{color:#555}
+    .ab-row .ab-val{font-family:"DM Mono";font-weight:600}
+    .ab-row.deduct .ab-val{color:var(--red)}
+    .ab-row.total .ab-val{color:var(--brand)}
+    /* Redeem section */
+    .redeem-section{background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px;display:none}
+    .redeem-section .rs-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gold);margin-bottom:10px}
+    .redeem-row{display:flex;gap:8px;align-items:center}
+    .redeem-row input{flex:1;padding:10px 14px;border:1.5px solid #fde68a;border-radius:8px;font-size:15px;font-family:"DM Mono";outline:none;background:#fff}
+    .redeem-row input:focus{border-color:var(--gold)}
+    .redeem-row .pts-label{font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap}
+    .redeem-equiv{font-size:12px;color:var(--gold);margin-top:6px;min-height:16px}
     .pts-preview{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--gold);margin-bottom:16px;text-align:center;display:none}
     .action-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .btn{padding:14px;border:none;border-radius:12px;cursor:pointer;font-weight:700;font-size:15px;transition:opacity 0.15s}
@@ -59,6 +77,7 @@
     .rpts .psub{font-size:12px;opacity:0.6;margin-top:4px}
     .rmeta{text-align:center;font-size:10px;opacity:0.4;margin-top:6px}
     .close-btn{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-top:16px;font-family:"DM Sans",sans-serif}
+    .info-tag{font-size:11px;background:#e0f2f1;color:var(--brand);border-radius:6px;padding:2px 7px;margin-left:6px;font-weight:600;vertical-align:middle}
   </style>
 </head>
 <body>
@@ -73,7 +92,7 @@
   <div class="terminal">
     <div class="terminal-header">
       <h2>Dispensing Transaction</h2>
-      <p>Enter customer phone and purchase amount</p>
+      <p>Enter customer phone and total bill amount</p>
     </div>
     <div class="terminal-body">
       <div class="field">
@@ -99,14 +118,42 @@
         </select>
       </div>
       <div class="field">
-        <label>Amount Spent (KSh)</label>
-        <input id="amount" type="number" placeholder="e.g. 450" min="1" oninput="updatePreview()"/>
+        <label>Total Bill (KSh) <span class="info-tag">Gross</span></label>
+        <input id="totalAmount" type="number" placeholder="e.g. 1200" min="1" oninput="recalculate()"/>
       </div>
+
+      <!-- Redeem points section -->
+      <div class="redeem-section" id="redeemSection">
+        <div class="rs-title">⭐ Redeem Points</div>
+        <div class="redeem-row">
+          <input id="redeemPts" type="number" placeholder="0" min="0" oninput="redeemPtsChanged()"/>
+          <span class="pts-label">pts available: <span id="maxPtsLabel">0</span></span>
+        </div>
+        <div class="redeem-equiv" id="redeemEquiv"></div>
+      </div>
+
+      <!-- Auto-calculated breakdown -->
+      <div class="amount-breakdown" id="amountBreakdown">
+        <div class="ab-title">Amount Breakdown</div>
+        <div class="ab-row">
+          <span class="ab-label">Total Bill</span>
+          <span class="ab-val" id="abTotal">KSh 0</span>
+        </div>
+        <div class="ab-row deduct">
+          <span class="ab-label">Points Redeemed (value)</span>
+          <span class="ab-val" id="abRedeem">− KSh 0</span>
+        </div>
+        <div class="ab-row total">
+          <span class="ab-label">Amount Charged (Cash)</span>
+          <span class="ab-val" id="abCharged">KSh 0</span>
+        </div>
+      </div>
+
+      <div class="pts-preview" id="ptsPreview"></div>
       <div class="field">
         <label>POS Reference (optional)</label>
         <input id="posRef" placeholder="e.g. GL-00234"/>
       </div>
-      <div class="pts-preview" id="ptsPreview"></div>
       <div class="action-btns">
         <button class="btn btn-earn" onclick="process('earn')">✓ Earn Points</button>
         <button class="btn btn-redeem" onclick="process('redeem')">★ Redeem Points</button>
@@ -136,10 +183,14 @@
 <script>
 const API="http://127.0.0.1:8000/api";
 const STORE="pos_token_pharmacy";
-const RATE=0.01;
+/* Points-to-KSh conversion: 1 pt = KSh 1 (adjust REDEEM_RATE as needed) */
+const EARN_RATE=0.01;   /* KSh → pts: 1% i.e. KSh100 = 1 pt */
+const REDEEM_RATE=1;    /* pts → KSh: 1 pt = KSh 1 */
 let POS_TOKEN="";
 let currentCustomer=null;
+
 window.onload=async()=>{startClock();await loginPartner();};
+
 async function loginPartner(){
   POS_TOKEN=localStorage.getItem(STORE)||"";
   if(POS_TOKEN) return;
@@ -150,7 +201,9 @@ async function loginPartner(){
   if(data.token){POS_TOKEN=data.token;localStorage.setItem(STORE,data.token);}
   else alert("Login failed: "+(data.error||"Unknown"));
 }
+
 function startClock(){setInterval(()=>{document.getElementById("clock").innerText=new Date().toLocaleTimeString();},1000);}
+
 async function lookupCustomer(){
   const phone=document.getElementById("phone").value.trim();
   if(phone.length!==9) return alert("Phone must be 9 digits");
@@ -161,19 +214,79 @@ async function lookupCustomer(){
     document.getElementById("custName").innerText=data.name;
     document.getElementById("custPts").innerText=data.points.toLocaleString()+" pts";
     document.getElementById("custCard").style.display="block";
-    updatePreview();
+    document.getElementById("maxPtsLabel").innerText=data.points.toLocaleString();
+    document.getElementById("redeemSection").style.display="block";
+    recalculate();
   }catch(err){alert(err.error||"Customer not found");}
 }
-function updatePreview(){
-  const el=document.getElementById("ptsPreview");
-  const amount=parseFloat(document.getElementById("amount").value)||0;
-  if(!currentCustomer||amount<=0){el.style.display="none";return;}
-  const pts=Math.floor(amount*RATE);
-  el.style.display="block";
-  el.innerHTML=`<strong>${currentCustomer.name}</strong> will earn <strong>+${pts} pts</strong> on KSh ${amount.toLocaleString()} purchase`;
+
+function redeemPtsChanged(){
+  if(!currentCustomer) return;
+  const pts=parseInt(document.getElementById("redeemPts").value)||0;
+  const maxPts=currentCustomer.points;
+  if(pts>maxPts){
+    document.getElementById("redeemPts").value=maxPts;
+  }
+  recalculate();
 }
-function resetCustomer(){currentCustomer=null;document.getElementById("custCard").style.display="none";document.getElementById("ptsPreview").style.display="none";}
-function clearAll(){document.getElementById("phone").value="";document.getElementById("amount").value="";document.getElementById("posRef").value="";resetCustomer();}
+
+function recalculate(){
+  const totalEl=document.getElementById("totalAmount");
+  const totalKsh=parseFloat(totalEl.value)||0;
+  const redeemPts=parseInt(document.getElementById("redeemPts").value)||0;
+  const redeemKsh=redeemPts*REDEEM_RATE;
+
+  /* Show breakdown whenever we have a customer and a total */
+  if(!currentCustomer||totalKsh<=0){
+    document.getElementById("amountBreakdown").style.display="none";
+    document.getElementById("ptsPreview").style.display="none";
+    document.getElementById("redeemEquiv").innerText="";
+    return;
+  }
+
+  /* Points equivalent label */
+  if(redeemPts>0){
+    document.getElementById("redeemEquiv").innerText=`= KSh ${redeemKsh.toLocaleString()} discount off your bill`;
+  } else {
+    document.getElementById("redeemEquiv").innerText="Enter points to redeem for a discount";
+  }
+
+  /* Amount actually charged in cash */
+  const chargedKsh=Math.max(0,totalKsh-redeemKsh);
+
+  /* Points earned are on the CASH amount only (not on redeemed-point discount) */
+  const ptsEarned=Math.floor(chargedKsh*EARN_RATE);
+
+  /* Update breakdown card */
+  document.getElementById("abTotal").innerText=`KSh ${totalKsh.toLocaleString()}`;
+  document.getElementById("abRedeem").innerText=`− KSh ${redeemKsh.toLocaleString()}`;
+  document.getElementById("abCharged").innerText=`KSh ${chargedKsh.toLocaleString()}`;
+  document.getElementById("amountBreakdown").style.display="block";
+
+  /* Points preview */
+  const ptsEl=document.getElementById("ptsPreview");
+  ptsEl.style.display="block";
+  ptsEl.innerHTML=`<strong>${currentCustomer.name}</strong> will earn <strong>+${ptsEarned} pts</strong> on KSh ${chargedKsh.toLocaleString()} cash paid`;
+}
+
+function resetCustomer(){
+  currentCustomer=null;
+  document.getElementById("custCard").style.display="none";
+  document.getElementById("ptsPreview").style.display="none";
+  document.getElementById("amountBreakdown").style.display="none";
+  document.getElementById("redeemSection").style.display="none";
+  document.getElementById("redeemPts").value="";
+  document.getElementById("redeemEquiv").innerText="";
+}
+
+function clearAll(){
+  document.getElementById("phone").value="";
+  document.getElementById("totalAmount").value="";
+  document.getElementById("posRef").value="";
+  document.getElementById("redeemPts").value="";
+  resetCustomer();
+}
+
 const STEPS=[
   {icon:"💊",label:"Dispensing Terminal",detail:"Sending transaction to loyalty backend"},
   {icon:"📡",label:"API Request Sent",   detail:"POST /api/pos/earn/ → PointSphere Backend"},
@@ -182,6 +295,7 @@ const STEPS=[
   {icon:"✅",label:"Points Confirmed",   detail:"Customer wallet updated successfully"},
 ];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
 function showFlow(title){
   document.getElementById("flowTitle").innerText=title;
   document.getElementById("flowSteps").innerHTML=STEPS.map((s,i)=>`
@@ -191,6 +305,7 @@ function showFlow(title){
     </div>`).join("");
   document.getElementById("flowOverlay").classList.add("show");
 }
+
 async function animateFlow(apiFn){
   let result=null;
   for(let i=0;i<STEPS.length;i++){
@@ -201,42 +316,87 @@ async function animateFlow(apiFn){
   }
   return result;
 }
+
 async function process(type){
   if(!currentCustomer) return alert("Lookup a customer first");
-  const amount=parseFloat(document.getElementById("amount").value);
-  if(!amount||amount<=0) return alert("Enter a valid amount");
+  const totalKsh=parseFloat(document.getElementById("totalAmount").value);
+  if(!totalKsh||totalKsh<=0) return alert("Enter a valid total bill amount");
   if(!POS_TOKEN) return alert("POS not logged in");
   const category=document.getElementById("category").value;
   const posRef=document.getElementById("posRef").value.trim()||`GL-${Date.now()}`;
-  showFlow(type==="earn"?"Awarding Points...":"Redeeming Points...");
-  const result=await animateFlow(async()=>{
-    if(type==="earn"){
-      const res=await fetch(`${API}/pos/earn/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},body:JSON.stringify({phone:currentCustomer.phone,amount_ksh:amount,pos_reference:posRef,note:`Goodlife — ${category}`})});
+  const redeemPts=parseInt(document.getElementById("redeemPts").value)||0;
+  const redeemKsh=redeemPts*REDEEM_RATE;
+
+  /* Amount the customer actually pays in cash = gross bill minus redeemed points value */
+  const amountCharged=Math.max(0,totalKsh-redeemKsh);
+
+  if(type==="earn"){
+    showFlow("Awarding Points...");
+    const result=await animateFlow(async()=>{
+      const res=await fetch(`${API}/pos/earn/`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
+        body:JSON.stringify({
+          phone:currentCustomer.phone,
+          amount_ksh:amountCharged,         /* cash portion only */
+          total_bill_ksh:totalKsh,
+          pos_reference:posRef,
+          note:`Goodlife — ${category}`
+        })
+      });
       const data=await res.json(); if(!res.ok) throw data; return data;
-    }else{
-      const pts=parseInt(prompt(`Redeem how many points?\nCustomer balance: ${currentCustomer.points} pts`));
-      if(!pts||pts<=0) throw {error:"Cancelled"};
-      const res=await fetch(`${API}/pos/redeem/`,{method:"POST",headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},body:JSON.stringify({phone:currentCustomer.phone,points:pts,amount_ksh:amount,pos_reference:posRef,note:`Goodlife redemption — ${category}`})});
+    });
+    await sleep(300);
+    document.getElementById("flowOverlay").classList.remove("show");
+    if(result?.success) showReceipt("earn",totalKsh,amountCharged,redeemPts,redeemKsh,result,posRef,category);
+    else if(result) alert("Error: "+(result.error||"Something went wrong"));
+
+  } else {
+    /* Pure redeem only */
+    if(redeemPts<=0) return alert("Enter points to redeem first.");
+    if(redeemPts>currentCustomer.points) return alert(`Customer only has ${currentCustomer.points} pts`);
+
+    showFlow("Redeeming Points...");
+    const result=await animateFlow(async()=>{
+      const res=await fetch(`${API}/pos/redeem/`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":POS_TOKEN},
+        body:JSON.stringify({
+          phone:currentCustomer.phone,
+          points:redeemPts,
+          amount_ksh:totalKsh,
+          pos_reference:posRef,
+          note:`Goodlife redemption — ${category}`
+        })
+      });
       const data=await res.json(); if(!res.ok) throw data; return data;
-    }
-  });
-  await sleep(300);
-  document.getElementById("flowOverlay").classList.remove("show");
-  if(result?.success) showReceipt(type,amount,result,posRef,category);
-  else if(result) alert("Error: "+(result.error||"Something went wrong"));
+    });
+    await sleep(300);
+    document.getElementById("flowOverlay").classList.remove("show");
+    if(result?.success) showReceipt("redeem",totalKsh,amountCharged,redeemPts,redeemKsh,result,posRef,category);
+    else if(result) alert("Error: "+(result.error||"Something went wrong"));
+  }
 }
-function showReceipt(type,amount,result,posRef,category){
+
+function showReceipt(type,totalKsh,chargedKsh,redeemPts,redeemKsh,result,posRef,category){
+  const redeemRow=redeemPts>0
+    ?`<div class="rrow"><span>Points Redeemed</span><span>${redeemPts.toLocaleString()} pts (KSh ${redeemKsh.toLocaleString()})</span></div>`:"";
   document.getElementById("receiptBody").innerHTML=`
     <div class="rrow"><span>Customer</span><span>${result.customer_name}</span></div>
     <div class="rrow"><span>Category</span><span>${category}</span></div>
-    <div class="rrow"><span>Amount Spent</span><span>KSh ${amount.toLocaleString()}</span></div>
+    <div class="rrow"><span>Total Bill</span><span>KSh ${totalKsh.toLocaleString()}</span></div>
+    ${redeemRow}
+    <div class="rrow"><span>Cash Charged</span><span>KSh ${chargedKsh.toLocaleString()}</span></div>
     <div class="rrow"><span>POS Reference</span><span>${posRef}</span></div>`;
-  document.getElementById("receiptPts").innerHTML=type==="earn"
-    ?`<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | New Balance: ${result.new_balance} pts</div>`
-    :`<div class="pval" style="color:#dc2626;">-${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
+
+  const ptsHtml=type==="earn"
+    ?`<div class="pval">+${result.points_awarded} pts</div><div class="psub">Points Earned | Balance: ${result.new_balance} pts</div>`
+    :`<div class="pval" style="color:var(--red);">−${result.points_redeemed} pts</div><div class="psub">Points Redeemed | New Balance: ${result.new_balance} pts</div>`;
+  document.getElementById("receiptPts").innerHTML=ptsHtml;
   document.getElementById("receiptMeta").innerText=`${new Date().toLocaleString()} | PointSphere Loyalty`;
   document.getElementById("receiptOverlay").classList.add("show");
 }
+
 function closeReceipt(){document.getElementById("receiptOverlay").classList.remove("show");clearAll();}
 </script>
 </body>
