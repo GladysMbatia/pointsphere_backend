@@ -190,6 +190,7 @@ window.onload=async()=>{startClock();await loginPartner();};
 
 async function loginPartner(){
   POS_TOKEN=localStorage.getItem(STORE)||"";
+  
   if(POS_TOKEN) return;
   const phone=prompt("Partner phone (9 digits):"); const pin=prompt("Partner PIN:");
   if(!phone||!pin) return;
